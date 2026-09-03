@@ -100,8 +100,8 @@ Work a phase's user stories in order; flip `[ ]`→`[x]` in `PLANIFICACION.md` o
 - **TypeScript strict, never `any`.** Define interfaces. `tsconfig` strict mode on.
 - **Drizzle for all queries** except the Phase 2 analytics SQL.
 - **Conventional Commits**, atomic and frequent: `feat(scope): …`, `fix(scope): …`, `test(scope): …`, `docs(scope): …`, `refactor(scope): …`, `chore(scope): …`. `PLAN_COMMITS.md` lists the intended messages per phase.
-- **Feature branches:** `feature/US-XXX-descripcion`.
-- **Tests live beside code** (`x.service.ts` + `tests/x.service.test.ts`), written alongside the code, not after. Coverage target >80% backend and frontend.
+- **Feature branches:** one per phase (`feature/fase-N-...`); atomic commits per `PLAN_COMMITS.md`; no push/PR unless asked; stop for review at each phase boundary.
+- **Tests live outside `src/`**, in a sibling `tests/` dir per workspace (`backend/tests/`, `frontend/tests/`), mirroring the `src/` folder hierarchy (`src/routes/health.route.ts` → `tests/routes/health.route.test.ts`). Global test setup (`setup-env.ts`, `setup.ts`) sits at the `tests/` root. Written alongside the code, not after. Coverage target >80% backend and frontend.
 - React: functional components + hooks; `useContext` + `useReducer` for state; optimistic updates where it helps UX; error boundaries.
 - Frontend component tree follows `fullstack-todo-challenge-1.md` §"Estructura de Componentes" — but in **TypeScript** (`.tsx`), adapting the Spanish `.jsx` names in that doc.
 

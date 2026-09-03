@@ -16,12 +16,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
+    // Tests live outside src/, mirroring the src/ hierarchy under tests/.
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: './tests/setup.ts',
     css: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['src/main.tsx', '**/*.d.ts', 'src/setupTests.ts'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/main.tsx', '**/*.d.ts'],
     },
   },
 });

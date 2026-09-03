@@ -1,7 +1,8 @@
 /** @type {import('jest').Config} */
 export default {
   testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/tests'],
+  // Tests live outside src/, mirroring the src/ hierarchy under tests/.
+  roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   setupFiles: ['<rootDir>/tests/setup-env.ts'],
   transform: {
