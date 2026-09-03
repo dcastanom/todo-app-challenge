@@ -25,4 +25,36 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: todo
+          POSTGRES_PASSWORD: todo
+          POSTGRES_DB: todolist_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U todo -d todolist_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://todo:todo@localhost:5432/todolist_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-access-secret-0000000000000000000000000000
+      JWT_REFRESH_SECRET: ci-refresh-secret-000000000000000000000000000
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:shared
+      - run: npm run db:migrate --workspace backend
+      - run: npm run db:seed --workspace backend
+      - run: npm run db:verify --workspace backend
+      - run: npm run test:integration --workspace backend
+
 # Phase 7 extends this with coverage gates and Playwright E2E.
