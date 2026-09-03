@@ -54,6 +54,11 @@ export default tseslint.config(
     },
   },
   {
+    // Repository methods return Drizzle's inferred (very large) query types.
+    files: ['backend/src/modules/**/*.repository.ts'],
+    rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
+  },
+  {
     // Drizzle schema/seed files are declarative; their builder types are
     // huge and fully inferred, and seed/analytics scripts intentionally
     // use console.
