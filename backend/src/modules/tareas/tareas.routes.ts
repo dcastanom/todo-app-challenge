@@ -12,7 +12,7 @@ import {
 } from '@todo/shared';
 import { db } from '../../db/client.js';
 import { AppError } from '../../middleware/error-handler.js';
-import { idParam, validateBody, validateQuery } from '../../middleware/validate.js';
+import { idParam, uuidParam, validateBody, validateQuery } from '../../middleware/validate.js';
 import { requireAuth } from '../auth/auth.middleware.js';
 import { TareaService } from './tareas.service.js';
 
@@ -55,6 +55,23 @@ tareasRouter.patch('/:id/completar', validateBody(completarSchema), async (req, 
   const { completada } = req.body as z.infer<typeof completarSchema>;
   const body: ApiResponse<TareaDTO> = {
     data: await tareas.setCompletada(userId(req), idParam(req), completada),
+  };
+  res.json(body);
+});
+
+const etiquetaBodySchema = z.object({ etiquetaId: z.string().uuid() });
+
+tareasRouter.post('/:id/etiquetas', validateBody(etiquetaBodySchema), async (req, res) => {
+  const { etiquetaId } = req.body as z.infer<typeof etiquetaBodySchema>;
+  const body: ApiResponse<TareaDTO> = {
+    data: await tareas.addEtiqueta(userId(req), idParam(req), etiquetaId),
+  };
+  res.json(body);
+});
+
+tareasRouter.delete('/:id/etiquetas/:eid', async (req, res) => {
+  const body: ApiResponse<TareaDTO> = {
+    data: await tareas.removeEtiqueta(userId(req), idParam(req), uuidParam(req, 'eid')),
   };
   res.json(body);
 });

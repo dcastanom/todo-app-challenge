@@ -26,7 +26,9 @@ export function validateQuery<S extends ZodTypeAny>(schema: S): RequestHandler {
 
 const idParamSchema = z.string().uuid('Identificador inválido');
 
-/** Reads and UUID-validates `:id` (throws ZodError → 422 on a bad value). */
-export function idParam(req: Request): string {
-  return idParamSchema.parse(req.params.id);
+/** Reads and UUID-validates a route param (throws ZodError → 422 on a bad value). */
+export function uuidParam(req: Request, name = 'id'): string {
+  return idParamSchema.parse(req.params[name]);
 }
+
+export const idParam = (req: Request): string => uuidParam(req, 'id');

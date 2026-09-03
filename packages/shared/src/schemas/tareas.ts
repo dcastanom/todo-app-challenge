@@ -25,6 +25,7 @@ export const crearTareaSchema = z.object({
     .uuid()
     .nullish()
     .transform((v) => v ?? null),
+  etiquetaIds: z.array(z.string().uuid()).max(20).optional(),
 });
 
 export const actualizarTareaSchema = crearTareaSchema
