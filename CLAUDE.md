@@ -28,32 +28,45 @@ When a doc conflicts with the challenge spec, ask; the challenge spec (`fullstac
 
 ## Commands
 
-No build tooling exists yet. Once Phase 0 scaffolds the project, this section should be updated with the real commands. The stack below implies these will exist:
+npm workspaces monorepo. Run from the repo root unless noted.
 
 ```bash
-# Backend (Node.js + Express + TypeScript)
-npm run dev                      # dev server with hot reload
-npm run build                    # tsc build
-npm run lint                     # ESLint
-npm test                         # Jest
-npm test -- path/to/file.test.ts # single test file
-npm test -- -t "test name"       # single test by name
-npm run test:coverage            # coverage report (target >80%)
-npx drizzle-kit generate         # generate migration from schema
-npx drizzle-kit migrate          # apply migrations
-npm run seed                     # load seed data (500+ tareas)
+# Setup
+cp .env.example .env
+npm install
+npm run build:shared            # compile @todo/shared to dist/ (backend/frontend depend on it)
 
-# Frontend (React + TypeScript + Vite)
-npm run dev
-npm run build
-npm test                         # Vitest
-npm run test:e2e                 # Playwright
+# Infra (Docker) — ports offset to avoid clashes: PG 5544, Redis 6399
+npm run db:up                   # docker compose up postgres + redis
+npm run db:down
 
-# Infra
-docker compose up -d             # Postgres 16 + Redis 7 (+ observability stack)
+# Dev servers
+npm run dev:backend             # http://localhost:4000  (health: /health, /api/v1/health)
+npm run dev:frontend            # http://localhost:5173
+
+# Database (run in backend/, or `npm run <script> --workspace backend`)
+npm run db:generate --workspace backend   # drizzle-kit: SQL migration from schema changes
+npm run db:migrate  --workspace backend   # apply migrations to DATABASE_URL
+npm run db:seed     --workspace backend   # deterministic faker seed (~780 tareas)
+npm run db:verify   --workspace backend   # assert schema + seed support the Fase 2 queries
+npm run db:reset    --workspace backend   # truncate all tables
+npm run db:studio   --workspace backend   # drizzle-kit studio
+
+# Analytics (Fase 2 — needs a seeded DB)
+npm run analytics --workspace backend                 # run the 10 BI queries + timings
+npm run analytics --workspace backend -- --explain    # + EXPLAIN ANALYZE plans
+
+# Quality (root = all workspaces)
+npm run lint | lint:fix
+npm run format | format:check
+npm run typecheck
+npm test                                   # unit only: backend Jest + frontend Vitest (no DB)
+npm test --workspace backend -- health      # single backend test by path/name
+npm run test:integration --workspace backend  # DB-backed suites (*.integration.test.ts)
+npm run test:coverage --workspace backend   # coverage (target >80%)
 ```
 
-Decide during Phase 0 whether backend and frontend are two folders in one repo (`backend/`, `frontend/`) or npm workspaces, and record that choice here. The monorepo `packages/` layout in `ARQUITECTURA.md` §9.3 is only for the optional future mobile proposal (P8), not the MVP.
+Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration.test.ts` = needs Postgres at `DATABASE_URL` (CI `integration` job spins up a service container).
 
 ---
 
@@ -73,15 +86,16 @@ Key ADRs in `ARQUITECTURA.md` §11: UUID primary keys (`gen_random_uuid()`), JWT
 
 **Layering (both ends):** Presentation → Business logic → Integration/Data access → DB. Backend services (`AuthService`, `TodoService`, `CategoryService`, `TagService`, `AnalyticsService`) hold business logic; repositories/DAOs wrap Drizzle; route handlers only do HTTP + Zod validation. Backend is stateless (horizontally scalable); JWT revocation via a Redis blacklist.
 
-**Database — 10 tables**, all with `id UUID PK`, `created_at`/`updated_at`, and `deleted_at` (soft delete — every query filters `deleted_at IS NULL`):
+**Database — 10 tables** (built in Fase 1, `backend/src/db/schema/`, one file per table + `relations.ts`), all with `id UUID PK` (`gen_random_uuid()`), `created_at`/`updated_at` (`timestamptz`), and — where soft-deletable — `deleted_at` (every read filters `deleted_at IS NULL`):
 `usuarios`, `categorias`, `tareas` (core), `etiquetas`, `tarea_etiquetas` (M:M junction, composite PK), `audit_logs` (JSONB before/after, P2), `notificaciones` + `notificacion_preferencias` (P1), `tarea_permisos` + `tarea_comentarios` (P3).
-Column names and enum values are **Spanish** (`usuario_id`, `titulo`, `completada`, `fecha_vencimiento`, `prioridad IN ('baja','normal','alta','urgente')`). Composite indexes drive multidimensional filtering (`idx_usuario_prioridad_completada`, etc.) — see `ARQUITECTURA.md` §8.2. Validation is defense-in-depth: Zod in the app **and** CHECK constraints in the DB.
+Drizzle uses `casing: 'snake_case'` — TS fields are camelCase Spanish (`usuarioId`, `fechaVencimiento`), DB columns snake_case Spanish. Additions beyond `ARQUITECTURA.md` SQL: `usuarios.ultimo_acceso` (for analytics Q8), `tareas.posicion` (drag & drop). Enum-like columns are `varchar` + a `chk_*` CHECK constraint, typed in TS via `.$type<Prioridad>()` from `@todo/shared`. Composite indexes drive multidimensional filtering (`idx_tareas_usuario_prioridad_completada`, etc.). Validation is defense-in-depth: Zod in the app **and** CHECK constraints in the DB.
+Migrations live in `backend/drizzle/` (committed). Seed is deterministic (`faker.seed`), ~780 tareas over 365 days, demo login `demo@todo.app` / `Password123!`. `npm run db:verify --workspace backend` asserts the schema + data support all 10 Fase 2 queries.
 
 **API:** REST under `/api/v1/...`, JWT bearer auth, ownership check on every resource. Full endpoint catalog in `ARQUITECTURA.md` §5.2. `GET /api/v1/tareas` supports filters `completada`, `categoria`, `prioridad`, `fecha_vencimiento` (range), `busqueda` (title+description), `etiquetas`, plus `sort=field:asc|desc` (multi-key) and pagination. Filter results are Redis-cached (Phase 6).
 
 **Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client), Observer (Context API), Repository/DAO, dynamic Query Builder for filters, Strategy for sorting.
 
-**The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable. Implement them in Phase 2, verified against seed data, each <1s. Raw SQL is allowed here (the one exception to "use Drizzle, not raw SQL").
+**The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable, built in Fase 2: `backend/src/modules/analytics/queries/q1..q10*.ts` (each exports the raw `Qn_SQL` string + a typed executor), aggregated by `AnalyticsService`. Raw SQL is allowed here (the one exception to "use Drizzle"). SQL is copy-paste-runnable in psql (no bound params); documented with sample output in `BI-QUERIES.md`. `npm run analytics --workspace backend [-- --explain]` runs them all with timings; `npm run test:integration --workspace backend` validates them against the seed. All execute in single-digit ms on the seed; `int8`/count columns come back as numbers (pg type parser in `db/client.ts`), rounded ratios as strings.
 
 ---
 
@@ -100,8 +114,8 @@ Work a phase's user stories in order; flip `[ ]`→`[x]` in `PLANIFICACION.md` o
 - **TypeScript strict, never `any`.** Define interfaces. `tsconfig` strict mode on.
 - **Drizzle for all queries** except the Phase 2 analytics SQL.
 - **Conventional Commits**, atomic and frequent: `feat(scope): …`, `fix(scope): …`, `test(scope): …`, `docs(scope): …`, `refactor(scope): …`, `chore(scope): …`. `PLAN_COMMITS.md` lists the intended messages per phase.
-- **Feature branches:** `feature/US-XXX-descripcion`.
-- **Tests live beside code** (`x.service.ts` + `tests/x.service.test.ts`), written alongside the code, not after. Coverage target >80% backend and frontend.
+- **Feature branches:** one per phase (`feature/fase-N-...`); atomic commits per `PLAN_COMMITS.md`; no push/PR unless asked; stop for review at each phase boundary.
+- **Tests live outside `src/`**, in a sibling `tests/` dir per workspace (`backend/tests/`, `frontend/tests/`), mirroring the `src/` folder hierarchy (`src/routes/health.route.ts` → `tests/routes/health.route.test.ts`). Global test setup (`setup-env.ts`, `setup.ts`) sits at the `tests/` root. Written alongside the code, not after. Coverage target >80% backend and frontend.
 - React: functional components + hooks; `useContext` + `useReducer` for state; optimistic updates where it helps UX; error boundaries.
 - Frontend component tree follows `fullstack-todo-challenge-1.md` §"Estructura de Componentes" — but in **TypeScript** (`.tsx`), adapting the Spanish `.jsx` names in that doc.
 
