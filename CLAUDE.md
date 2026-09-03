@@ -66,7 +66,7 @@ npm run test:integration --workspace backend  # DB-backed suites (*.integration.
 npm run test:coverage --workspace backend   # coverage (target >80%)
 ```
 
-Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration.test.ts` = needs Postgres at `DATABASE_URL` (CI `integration` job spins up a service container).
+Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration.test.ts` = needs Postgres + Redis (CI `integration` job spins up service containers). Integration suites run **serially** (`maxWorkers: 1`) — they share one DB and clean up by `authtest-%` email prefix. Shared helpers: `backend/tests/helpers/api.ts`, `frontend/tests/factories.ts` + `test-utils.tsx`.
 
 ---
 
@@ -97,7 +97,9 @@ Migrations live in `backend/drizzle/` (committed). Seed is deterministic (`faker
 
 **Tareas CRUD (Fase 4)** — `backend/src/modules/tareas/`: `TareasRepository` (every query scoped to `usuarioId` + `deletedAt IS NULL`; priority-rank `CASE` for `orden=prioridad`; parallel `count()` for pagination), `TareaService` (DTO mapping via `toTareaDTO`, 404 for missing/foreign tasks, category-ownership check → 422). Endpoints under `/api/v1/tareas`, all `requireAuth`: `GET` (`page`/`limit`/`orden`/`direccion`), `POST` (201), `GET/PUT/DELETE /:id`, `PATCH /:id/completar` (body `{completada?}` — omitted = toggle). `idParam(req)` UUID-validates `:id`. Filtering/search is Fase 6. Frontend: `useTodos` hook (`useReducer` — paginated load, **optimistic** toggle/delete with rollback, sort presets); `TodoList` / `TodoItem` / `TodoForm` (RHF+Zod, `datetime-local` ↔ ISO) / `Pagination` in `components/tareas/`; `DashboardPage` renders the list.
 
-**Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client — done), Observer (Context API — done), Repository/DAO (done — auth + tareas), dynamic Query Builder for filters (Fase 6), Strategy for sorting.
+**Categorías & Etiquetas (Fase 5)** — `backend/src/modules/{categorias,etiquetas}/`: user-scoped CRUD under `/api/v1/{categorias,etiquetas}`, 409 on duplicate name (partial unique index), hex-color validation. Deleting a category transactionally nulls `tareas.categoriaId` for the owner; deleting a tag removes its `tarea_etiquetas` rows. `TareaDTO` now embeds `categoria` (resumen) + `etiquetas[]` via a Drizzle **relational query** (`tareas.repository.ts` `withRelaciones`). `crearTareaSchema`/`actualizarTareaSchema` accept `etiquetaIds` (synced transactionally, ownership-checked); granular `POST/DELETE /api/v1/tareas/:id/etiquetas[/:eid]`. Frontend: generic `useCrudColeccion` hook → `useCategorias`/`useEtiquetas`; `TaxonomyManager` (shared) → `CategoryManager`/`TagManager` in the dashboard sidebar; `TodoForm` category select + tag checkboxes; `TodoItem` category dot + tag chips. `DashboardPage` owns the three hooks and refreshes tasks after taxonomy edits.
+
+**Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client — done), Observer (Context API — done), Repository/DAO (done), dynamic Query Builder for filters (Fase 6), Strategy for sorting.
 
 **The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable, built in Fase 2: `backend/src/modules/analytics/queries/q1..q10*.ts` (each exports the raw `Qn_SQL` string + a typed executor), aggregated by `AnalyticsService`. Raw SQL is allowed here (the one exception to "use Drizzle"). SQL is copy-paste-runnable in psql (no bound params); documented with sample output in `BI-QUERIES.md`. `npm run analytics --workspace backend [-- --explain]` runs them all with timings; `npm run test:integration --workspace backend` validates them against the seed. All execute in single-digit ms on the seed; `int8`/count columns come back as numbers (pg type parser in `db/client.ts`), rounded ratios as strings.
 
