@@ -38,12 +38,42 @@ export const completarTareaSchema = z.object({
   completada: z.boolean(),
 });
 
+/** Query string `"true"` / `"false"` → boolean. */
+const boolParam = z
+  .enum(['true', 'false'])
+  .transform((v) => v === 'true')
+  .optional();
+
+/** Comma-separated list → trimmed non-empty string[]. */
+const csvParam = z
+  .string()
+  .transform((s) =>
+    s
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.string().min(1)).min(1))
+  .optional();
+
 export const listarTareasQuerySchema = paginationQuerySchema.extend({
   orden: z.enum(CAMPOS_ORDEN).default('created_at'),
   direccion: z.enum(DIRECCIONES_ORDEN).default('desc'),
+  // Filters (all optional)
+  completada: boolParam,
+  prioridad: z.enum(PRIORIDADES).optional(),
+  categoria: z.string().uuid().optional(),
+  sinCategoria: boolParam,
+  etiquetas: csvParam,
+  fechaDesde: z.string().datetime({ offset: true }).optional(),
+  fechaHasta: z.string().datetime({ offset: true }).optional(),
+  vencidas: boolParam,
+  busqueda: z.string().trim().min(1).max(120).optional(),
 });
 
 export type CrearTareaInput = z.infer<typeof crearTareaSchema>;
 export type ActualizarTareaInput = z.infer<typeof actualizarTareaSchema>;
 export type CompletarTareaInput = z.infer<typeof completarTareaSchema>;
 export type ListarTareasQuery = z.infer<typeof listarTareasQuerySchema>;
+/** The filter-only slice, used by the frontend FilterPanel/useFilters. */
+export type TareaFiltros = Omit<ListarTareasQuery, 'page' | 'limit' | 'orden' | 'direccion'>;

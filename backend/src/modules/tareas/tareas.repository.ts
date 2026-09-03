@@ -1,4 +1,21 @@
-import { and, asc, count, desc, eq, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { ListarTareasQuery } from '@todo/shared';
 import type { Database } from '../../db/client.js';
 import {
@@ -32,15 +49,60 @@ const withRelaciones = {
 
 export type TareaConRelaciones = NonNullable<Awaited<ReturnType<TareasRepository['findById']>>>;
 
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&');
+}
+
 export class TareasRepository {
   constructor(private readonly db: Database) {}
 
-  private scope(usuarioId: string): SQL | undefined {
-    return and(eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt));
+  /** Composes the WHERE clause from ownership + every active filter. */
+  private buildWhere(usuarioId: string, q: ListarTareasQuery): SQL {
+    const parts: (SQL | undefined)[] = [eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt)];
+
+    if (q.completada !== undefined) parts.push(eq(tareas.completada, q.completada));
+    if (q.prioridad) parts.push(eq(tareas.prioridad, q.prioridad));
+    if (q.categoria) parts.push(eq(tareas.categoriaId, q.categoria));
+    if (q.sinCategoria) parts.push(isNull(tareas.categoriaId));
+    if (q.fechaDesde) parts.push(gte(tareas.fechaVencimiento, new Date(q.fechaDesde)));
+    if (q.fechaHasta) parts.push(lte(tareas.fechaVencimiento, new Date(q.fechaHasta)));
+
+    if (q.vencidas) {
+      parts.push(
+        eq(tareas.completada, false),
+        isNotNull(tareas.fechaVencimiento),
+        lt(tareas.fechaVencimiento, sql`now()`),
+      );
+    }
+
+    if (q.busqueda) {
+      const term = `%${escapeLike(q.busqueda)}%`;
+      parts.push(or(ilike(tareas.titulo, term), ilike(tareas.descripcion, term)));
+    }
+
+    if (q.etiquetas && q.etiquetas.length > 0) {
+      parts.push(
+        exists(
+          this.db
+            .select({ one: sql`1` })
+            .from(tareaEtiquetas)
+            .innerJoin(etiquetas, eq(etiquetas.id, tareaEtiquetas.etiquetaId))
+            .where(
+              and(
+                eq(tareaEtiquetas.tareaId, tareas.id),
+                isNull(etiquetas.deletedAt),
+                inArray(etiquetas.nombre, q.etiquetas),
+              ),
+            ),
+        ),
+      );
+    }
+
+    return and(...parts) as SQL;
   }
 
   async list(usuarioId: string, query: ListarTareasQuery) {
-    const where = this.scope(usuarioId);
+    const where = this.buildWhere(usuarioId, query);
     const dir = query.direccion === 'asc' ? asc : desc;
 
     const [rows, [totalRow]] = await Promise.all([
@@ -59,7 +121,7 @@ export class TareasRepository {
 
   findById(usuarioId: string, id: string) {
     return this.db.query.tareas.findFirst({
-      where: and(eq(tareas.id, id), this.scope(usuarioId)),
+      where: and(eq(tareas.id, id), eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt)),
       with: withRelaciones,
     });
   }
@@ -111,7 +173,7 @@ export class TareasRepository {
     const [row] = await this.db
       .update(tareas)
       .set({ deletedAt: new Date() })
-      .where(and(eq(tareas.id, id), this.scope(usuarioId)))
+      .where(and(eq(tareas.id, id), eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt)))
       .returning({ id: tareas.id });
     return row !== undefined;
   }
