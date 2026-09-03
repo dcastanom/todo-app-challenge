@@ -1,9 +1,12 @@
+/**
+ * Unit test config — no database, safe for CI without services.
+ * DB-backed suites are `*.integration.test.ts` (see jest.integration.config.mjs).
+ */
+
 /** @type {import('jest').Config} */
-export default {
+export const base = {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.test.ts'],
-  setupFiles: ['<rootDir>/tests/setup-env.ts'],
   transform: {
     '^.+\\.[cm]?[jt]sx?$': ['@swc/jest'],
   },
@@ -15,6 +18,15 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@todo/shared$': '<rootDir>/../packages/shared/src/index.ts',
   },
+  clearMocks: true,
+};
+
+/** @type {import('jest').Config} */
+export default {
+  ...base,
+  testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.test\\.ts$'],
+  setupFiles: ['<rootDir>/tests/setup-env.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -23,9 +35,9 @@ export default {
     '!src/db/reset.ts',
     '!src/db/verify.ts',
     '!src/db/seed/index.ts',
+    '!src/modules/analytics/run.ts',
   ],
   coverageThreshold: {
     global: { branches: 80, functions: 80, lines: 80, statements: 80 },
   },
-  clearMocks: true,
 };
