@@ -1,6 +1,7 @@
 import type { ActualizarCategoriaInput, CategoriaDTO, CrearCategoriaInput } from '@todo/shared';
 import type { Database } from '../../db/client.js';
 import type { Categoria } from '../../db/schema/index.js';
+import { invalidateUser } from '../../lib/cache.js';
 import { AppError } from '../../middleware/error-handler.js';
 import { CategoriasRepository } from './categorias.repository.js';
 
@@ -38,6 +39,7 @@ export class CategoriaService {
   }
 
   async create(usuarioId: string, input: CrearCategoriaInput): Promise<CategoriaDTO> {
+    void invalidateUser('tareas', usuarioId);
     if (await this.repo.nombreEnUso(usuarioId, input.nombre)) {
       throw new AppError(409, 'CATEGORIA_DUPLICADA', 'Ya tienes una categoría con ese nombre');
     }
@@ -56,6 +58,7 @@ export class CategoriaService {
     id: string,
     input: ActualizarCategoriaInput,
   ): Promise<CategoriaDTO> {
+    void invalidateUser('tareas', usuarioId);
     await this.getOwned(usuarioId, id);
     if (input.nombre !== undefined && (await this.repo.nombreEnUso(usuarioId, input.nombre, id))) {
       throw new AppError(409, 'CATEGORIA_DUPLICADA', 'Ya tienes una categoría con ese nombre');
@@ -70,6 +73,7 @@ export class CategoriaService {
   }
 
   async remove(usuarioId: string, id: string): Promise<void> {
+    void invalidateUser('tareas', usuarioId);
     if (!(await this.repo.softDelete(usuarioId, id))) {
       throw new AppError(404, 'CATEGORIA_NO_ENCONTRADA', 'Categoría no encontrada');
     }

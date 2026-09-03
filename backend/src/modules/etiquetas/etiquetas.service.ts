@@ -1,6 +1,7 @@
 import type { ActualizarEtiquetaInput, CrearEtiquetaInput, EtiquetaDTO } from '@todo/shared';
 import type { Database } from '../../db/client.js';
 import type { Etiqueta } from '../../db/schema/index.js';
+import { invalidateUser } from '../../lib/cache.js';
 import { AppError } from '../../middleware/error-handler.js';
 import { EtiquetasRepository } from './etiquetas.repository.js';
 
@@ -30,6 +31,7 @@ export class EtiquetaService {
   }
 
   async create(usuarioId: string, input: CrearEtiquetaInput): Promise<EtiquetaDTO> {
+    void invalidateUser('tareas', usuarioId);
     if (await this.repo.nombreEnUso(usuarioId, input.nombre)) {
       throw new AppError(409, 'ETIQUETA_DUPLICADA', 'Ya tienes una etiqueta con ese nombre');
     }
@@ -43,6 +45,7 @@ export class EtiquetaService {
     id: string,
     input: ActualizarEtiquetaInput,
   ): Promise<EtiquetaDTO> {
+    void invalidateUser('tareas', usuarioId);
     await this.getOwned(usuarioId, id);
     if (input.nombre !== undefined && (await this.repo.nombreEnUso(usuarioId, input.nombre, id))) {
       throw new AppError(409, 'ETIQUETA_DUPLICADA', 'Ya tienes una etiqueta con ese nombre');
@@ -56,6 +59,7 @@ export class EtiquetaService {
   }
 
   async remove(usuarioId: string, id: string): Promise<void> {
+    void invalidateUser('tareas', usuarioId);
     if (!(await this.repo.softDelete(usuarioId, id))) {
       throw new AppError(404, 'ETIQUETA_NO_ENCONTRADA', 'Etiqueta no encontrada');
     }

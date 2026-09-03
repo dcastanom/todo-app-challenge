@@ -7,8 +7,12 @@ import type {
 } from '@todo/shared';
 import type { Database } from '../../db/client.js';
 import type { NuevaTarea } from '../../db/schema/index.js';
+import { invalidateUser, withUserCache } from '../../lib/cache.js';
 import { AppError } from '../../middleware/error-handler.js';
 import { TareasRepository, type TareaConRelaciones } from './tareas.repository.js';
+
+/** Namespace + TTL for the task-list cache. */
+export const TAREAS_CACHE = { ns: 'tareas', ttl: 300 } as const;
 
 export function toTareaDTO(t: TareaConRelaciones): TareaDTO {
   return {
@@ -67,17 +71,24 @@ export class TareaService {
     return toTareaDTO(await this.getOwned(usuarioId, id));
   }
 
+  /** Fire-and-forget cache bust after a mutation. */
+  private static invalidate(usuarioId: string): void {
+    void invalidateUser(TAREAS_CACHE.ns, usuarioId);
+  }
+
   async list(usuarioId: string, query: ListarTareasQuery): Promise<PaginatedResponse<TareaDTO>> {
-    const { rows, total } = await this.repo.list(usuarioId, query);
-    return {
-      data: rows.map(toTareaDTO),
-      meta: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / query.limit)),
-      },
-    };
+    return withUserCache(TAREAS_CACHE.ns, usuarioId, query, TAREAS_CACHE.ttl, async () => {
+      const { rows, total } = await this.repo.list(usuarioId, query);
+      return {
+        data: rows.map(toTareaDTO),
+        meta: {
+          page: query.page,
+          limit: query.limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / query.limit)),
+        },
+      };
+    });
   }
 
   get(usuarioId: string, id: string): Promise<TareaDTO> {
@@ -97,6 +108,7 @@ export class TareaService {
       fechaVencimiento: input.fechaVencimiento ? new Date(input.fechaVencimiento) : null,
     };
     const id = await this.repo.create(data, etiquetaIds);
+    TareaService.invalidate(usuarioId);
     return this.dtoById(usuarioId, id);
   }
 
@@ -117,6 +129,7 @@ export class TareaService {
     if (!(await this.repo.update(usuarioId, id, patch, etiquetaIds))) {
       throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Tarea no encontrada');
     }
+    TareaService.invalidate(usuarioId);
     return this.dtoById(usuarioId, id);
   }
 
@@ -132,6 +145,7 @@ export class TareaService {
     ) {
       throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Tarea no encontrada');
     }
+    TareaService.invalidate(usuarioId);
     return this.dtoById(usuarioId, id);
   }
 
@@ -141,12 +155,14 @@ export class TareaService {
     if (!valida)
       throw new AppError(422, 'ETIQUETA_INVALIDA', 'La etiqueta no existe o no te pertenece');
     await this.repo.addEtiqueta(tareaId, etiquetaId);
+    TareaService.invalidate(usuarioId);
     return this.dtoById(usuarioId, tareaId);
   }
 
   async removeEtiqueta(usuarioId: string, tareaId: string, etiquetaId: string): Promise<TareaDTO> {
     await this.getOwned(usuarioId, tareaId);
     await this.repo.removeEtiqueta(tareaId, etiquetaId);
+    TareaService.invalidate(usuarioId);
     return this.dtoById(usuarioId, tareaId);
   }
 
@@ -154,5 +170,6 @@ export class TareaService {
     if (!(await this.repo.softDelete(usuarioId, id))) {
       throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Tarea no encontrada');
     }
+    TareaService.invalidate(usuarioId);
   }
 }
