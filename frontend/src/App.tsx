@@ -1,17 +1,24 @@
 import type { JSX } from 'react';
-import { API_PREFIX } from '@todo/shared';
-import styles from './App.module.css';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from './components/auth/ProtectedRoute.js';
+import { AuthProvider } from './context/AuthProvider.js';
+import { DashboardPage } from './pages/DashboardPage.js';
+import { LoginPage } from './pages/LoginPage.js';
+import { RegisterPage } from './pages/RegisterPage.js';
 
 export function App(): JSX.Element {
   return (
-    <main className={styles.shell}>
-      <section className={styles.card}>
-        <h1 className={styles.title}>Todo App</h1>
-        <p>
-          Fase 0 completada. El cliente React arranca y consume el contrato compartido (
-          <code>@todo/shared</code>). API base: <code>{API_PREFIX}</code>.
-        </p>
-      </section>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<DashboardPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
