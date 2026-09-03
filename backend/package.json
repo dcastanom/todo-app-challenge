@@ -16,12 +16,14 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:integration": "jest --config jest.integration.config.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed/index.ts",
     "db:verify": "tsx src/db/verify.ts",
     "db:reset": "tsx src/db/reset.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "analytics": "tsx src/modules/analytics/run.ts"
   },
   "dependencies": {
     "@todo/shared": "*",

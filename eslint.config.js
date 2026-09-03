@@ -55,8 +55,9 @@ export default tseslint.config(
   },
   {
     // Drizzle schema/seed files are declarative; their builder types are
-    // huge and fully inferred, and seed scripts intentionally use console.
-    files: ['backend/src/db/**/*.ts'],
+    // huge and fully inferred, and seed/analytics scripts intentionally
+    // use console.
+    files: ['backend/src/db/**/*.ts', 'backend/src/modules/analytics/**/*.ts'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
       'no-console': 'off',
