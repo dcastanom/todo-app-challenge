@@ -5,6 +5,7 @@ import type {
   CrearTareaInput,
   DireccionOrden,
   TareaDTO,
+  TareaFiltros,
 } from '@todo/shared';
 import { PAGINACION } from '@todo/shared';
 import { HttpError } from '../services/http.js';
@@ -90,14 +91,20 @@ export interface UseTodos extends State {
   toggleCompletada: (id: string) => Promise<void>;
 }
 
-export function useTodos(): UseTodos {
+export function useTodos(filtros: TareaFiltros = {}): UseTodos {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { page, limit, orden, direccion } = state;
+  const filtrosKey = JSON.stringify(filtros);
+
+  // A filter change always sends the user back to page 1.
+  useEffect(() => {
+    dispatch({ type: 'SET_PAGE', page: 1 });
+  }, [filtrosKey]);
 
   const load = useCallback(async () => {
     dispatch({ type: 'LOADING' });
     try {
-      const res = await tareasApi.list({ page, limit, orden, direccion });
+      const res = await tareasApi.list({ page, limit, orden, direccion, ...filtros });
       dispatch({
         type: 'LOADED',
         tareas: res.data,
@@ -108,7 +115,9 @@ export function useTodos(): UseTodos {
     } catch (err) {
       dispatch({ type: 'ERROR', message: msg(err, 'No se pudieron cargar las tareas') });
     }
-  }, [page, limit, orden, direccion]);
+    // `filtrosKey` (a JSON string) is the stable dependency that stands in
+    // for the `filtros` object read in the body.
+  }, [page, limit, orden, direccion, filtrosKey]);
 
   useEffect(() => {
     void load();
