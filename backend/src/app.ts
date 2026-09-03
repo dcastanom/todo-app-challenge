@@ -9,6 +9,7 @@ import { logger } from './config/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { healthRouter } from './routes/health.route.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { tareasRouter } from './modules/tareas/tareas.routes.js';
 
 /**
  * Builds the Express application without binding a port — so tests can
@@ -49,9 +50,10 @@ export function createApp(): Express {
   app.use(`${API_PREFIX}/auth/login`, authLimiter);
   app.use(`${API_PREFIX}/auth/register`, authLimiter);
   app.use(`${API_PREFIX}/auth`, authRouter);
+  app.use(`${API_PREFIX}/tareas`, tareasRouter);
 
-  // Feature routers (tareas, categorias, etiquetas, analytics) mount here
-  // in later phases.
+  // Feature routers (categorias, etiquetas, analytics) mount here in later
+  // phases.
 
   app.use(notFoundHandler);
   app.use(errorHandler);
