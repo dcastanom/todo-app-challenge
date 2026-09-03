@@ -74,7 +74,7 @@ Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration
 
 **Backend:** Node.js 18+ LTS · Express · TypeScript strict (no `any`) · PostgreSQL 16 · **Drizzle ORM** · Zod · JWT + refresh tokens · Helmet · Pino · Redis (caching) · Socket.io/ws (real-time, optional phases) · Jest + Supertest
 
-**Frontend:** React 18 · TypeScript strict · Context API + `useReducer` · React Hook Form + Zod · Axios behind an **Adapter Pattern** (`HttpClient` interface) · CSS Modules · dark mode via CSS variables · `react-beautiful-dnd` · Vitest + React Testing Library · Playwright (E2E)
+**Frontend:** React 18 · TypeScript strict · Context API + `useReducer` · **`react-router-dom` v7** (added Fase 3 — not in original stack doc; needed for `ProtectedRoute`) · React Hook Form + `@hookform/resolvers` + Zod · Axios behind an **Adapter Pattern** (`HttpClient` interface) · CSS Modules · dark mode via CSS variables · `react-beautiful-dnd` · Vitest + React Testing Library · Playwright (E2E)
 
 **Infra:** Docker + Docker Compose · GitHub Actions (lint → test → build → deploy) · Pino + Prometheus + Jaeger + Grafana
 
@@ -93,7 +93,9 @@ Migrations live in `backend/drizzle/` (committed). Seed is deterministic (`faker
 
 **API:** REST under `/api/v1/...`, JWT bearer auth, ownership check on every resource. Full endpoint catalog in `ARQUITECTURA.md` §5.2. `GET /api/v1/tareas` supports filters `completada`, `categoria`, `prioridad`, `fecha_vencimiento` (range), `busqueda` (title+description), `etiquetas`, plus `sort=field:asc|desc` (multi-key) and pagination. Filter results are Redis-cached (Phase 6).
 
-**Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client), Observer (Context API), Repository/DAO, dynamic Query Builder for filters, Strategy for sorting.
+**Auth (Fase 3)** — `backend/src/modules/auth/`: bcrypt (`bcryptjs`) password hashing; `jsonwebtoken` HS256 access (15m) + refresh (7d) tokens, each with a `jti`. **Redis** (`ioredis`, `src/config/redis.ts`) backs the token lifecycle (`src/modules/auth/token-store.ts`): `refresh:<jti>` allow-list (rotation — refresh is single-use), `bl:<jti>` deny-list (logout), both TTL'd. `requireAuth` middleware → `req.user`. Endpoints: `POST /api/v1/auth/{register,login,refresh,logout}`, `GET /api/v1/auth/profile`; stricter rate limit on login/register. Frontend: `AxiosHttpClient` implements the `HttpClient` **Adapter** (`src/services/http.ts`) with a request interceptor (attach token) + response interceptor (one refresh-and-retry on 401, then `todo:session-expired` event); `AuthProvider` (`useReducer`, **Observer**) + `useAuth`; tokens in `localStorage` (`token-storage.ts`); `react-router-dom` v7 routing with `<ProtectedRoute>`. RHF + Zod (shared `registerSchema`/`loginSchema`) for `LoginForm`/`RegisterForm`.
+
+**Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client — done), Observer (Context API — done), Repository/DAO, dynamic Query Builder for filters, Strategy for sorting.
 
 **The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable, built in Fase 2: `backend/src/modules/analytics/queries/q1..q10*.ts` (each exports the raw `Qn_SQL` string + a typed executor), aggregated by `AnalyticsService`. Raw SQL is allowed here (the one exception to "use Drizzle"). SQL is copy-paste-runnable in psql (no bound params); documented with sample output in `BI-QUERIES.md`. `npm run analytics --workspace backend [-- --explain]` runs them all with timings; `npm run test:integration --workspace backend` validates them against the seed. All execute in single-digit ms on the seed; `int8`/count columns come back as numbers (pg type parser in `db/client.ts`), rounded ratios as strings.
 

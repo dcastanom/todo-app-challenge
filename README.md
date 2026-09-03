@@ -75,6 +75,7 @@ Tests de integración (necesitan Postgres): `npm run test:integration --workspac
 - [x] **Fase 0** — Setup: monorepo, TypeScript strict, ESLint + Prettier + Husky + commitlint, Docker Compose, CI base.
 - [x] **Fase 1** — Base de datos: 10 tablas Drizzle + migración inicial, seed determinista (500+ tareas), script de verificación.
 - [x] **Fase 2** — 10 queries de analítica (BI): `backend/src/modules/analytics/`, documentadas con salida de ejemplo en [`BI-QUERIES.md`](BI-QUERIES.md). `npm run analytics --workspace backend`.
-- [ ] Fases 3-8 — ver `PLANIFICACION.md`.
+- [x] **Fase 3** — Autenticación: JWT (access + refresh con rotación en Redis), bcrypt, `POST /api/v1/auth/{register,login,refresh,logout}` + `GET /profile`. Frontend: `AuthProvider` + `useAuth`, `HttpClient` (Adapter con Axios), `LoginForm`/`RegisterForm` (RHF + Zod), `ProtectedRoute` (react-router).
+- [ ] Fases 4-8 — ver `PLANIFICACION.md`.
 
 Documentación de arquitectura y plan: `CLAUDE.md`, `ARQUITECTURA.md`, `PLANIFICACION.md`, `PLAN_COMMITS.md`.
