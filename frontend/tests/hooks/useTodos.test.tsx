@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { PaginatedResponse, TareaDTO } from '@todo/shared';
 import { useTodos } from '../../src/hooks/useTodos.js';
+import { makePage as page, makeTarea as tarea } from '../factories.js';
 
 const api = vi.hoisted(() => ({
   list: vi.fn(),
@@ -10,26 +10,6 @@ const api = vi.hoisted(() => ({
   remove: vi.fn(),
 }));
 vi.mock('../../src/services/tareas.service.js', () => ({ tareasApi: api }));
-
-const tarea = (over: Partial<TareaDTO> = {}): TareaDTO => ({
-  id: 'a',
-  titulo: 'A',
-  descripcion: null,
-  prioridad: 'normal',
-  completada: false,
-  fechaVencimiento: null,
-  completadaEn: null,
-  categoriaId: null,
-  posicion: 0,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  ...over,
-});
-
-const page = (rows: TareaDTO[]): PaginatedResponse<TareaDTO> => ({
-  data: rows,
-  meta: { page: 1, limit: 20, total: rows.length, totalPages: 1 },
-});
 
 beforeEach(() => {
   vi.clearAllMocks();
