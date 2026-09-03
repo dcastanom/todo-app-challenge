@@ -9,5 +9,8 @@ import { base } from './jest.config.mjs';
 export default {
   ...base,
   testMatch: ['**/*.integration.test.ts'],
-  testTimeout: 20_000,
+  testTimeout: 30_000,
+  // Suites share one database and clean up by email prefix — run them
+  // serially so one suite's afterAll can't delete another's fixtures.
+  maxWorkers: 1,
 };

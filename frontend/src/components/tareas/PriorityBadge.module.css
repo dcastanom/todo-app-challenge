@@ -1,0 +1,26 @@
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.baja {
+  background: #eef2f7;
+  color: #5b6b7c;
+}
+.normal {
+  background: #e3f0fb;
+  color: #1f6fb2;
+}
+.alta {
+  background: #fdeede;
+  color: #b9660d;
+}
+.urgente {
+  background: #fde3e1;
+  color: #c0392b;
+}

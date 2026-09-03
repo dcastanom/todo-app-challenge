@@ -54,6 +54,11 @@ export default tseslint.config(
     },
   },
   {
+    // Repository methods return Drizzle's inferred (very large) query types.
+    files: ['backend/src/modules/**/*.repository.ts'],
+    rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
+  },
+  {
     // Drizzle schema/seed files are declarative; their builder types are
     // huge and fully inferred, and seed/analytics scripts intentionally
     // use console.
@@ -66,12 +71,14 @@ export default tseslint.config(
   {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/tests/**/*.{ts,tsx}'],
     languageOptions: {
-      globals: { ...globals.node, ...globals.jest },
+      globals: { ...globals.node, ...globals.jest, vi: 'readonly' },
     },
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
   prettier,

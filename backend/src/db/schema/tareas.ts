@@ -49,6 +49,10 @@ export const tareas = pgTable(
     index('idx_tareas_created_at').on(table.createdAt),
     index('idx_tareas_completada_en').on(table.completadaEn),
     index('idx_tareas_deleted_at').on(table.deletedAt),
+    // Trigram indexes for `busqueda` (ILIKE '%term%'). Needs the pg_trgm
+    // extension — the migration creates it.
+    index('idx_tareas_titulo_trgm').using('gin', sql`${table.titulo} gin_trgm_ops`),
+    index('idx_tareas_descripcion_trgm').using('gin', sql`${table.descripcion} gin_trgm_ops`),
   ],
 );
 
