@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { PRIORIDADES, type CrearTareaInput, type Prioridad, type TareaDTO } from '@todo/shared';
+import {
+  PRIORIDADES,
+  type CategoriaDTO,
+  type CrearTareaInput,
+  type EtiquetaDTO,
+  type Prioridad,
+  type TareaDTO,
+} from '@todo/shared';
 import { HttpError } from '../../services/http.js';
 import styles from './TodoForm.module.css';
 
@@ -10,6 +18,7 @@ const formSchema = z.object({
   descripcion: z.string().trim().max(5000),
   prioridad: z.enum(PRIORIDADES),
   fechaLocal: z.string(),
+  categoriaId: z.string(),
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -30,11 +39,22 @@ function isoToLocalInput(iso: string | null): string {
 
 export interface TodoFormProps {
   initial?: TareaDTO;
+  categorias: CategoriaDTO[];
+  etiquetas: EtiquetaDTO[];
   onSubmit: (input: CrearTareaInput) => Promise<void>;
   onCancel: () => void;
 }
 
-export function TodoForm({ initial, onSubmit, onCancel }: TodoFormProps): React.JSX.Element {
+export function TodoForm({
+  initial,
+  categorias,
+  etiquetas,
+  onSubmit,
+  onCancel,
+}: TodoFormProps): React.JSX.Element {
+  const [etiquetaIds, setEtiquetaIds] = useState<string[]>(
+    initial?.etiquetas.map((e) => e.id) ?? [],
+  );
   const {
     register,
     handleSubmit,
@@ -47,8 +67,13 @@ export function TodoForm({ initial, onSubmit, onCancel }: TodoFormProps): React.
       descripcion: initial?.descripcion ?? '',
       prioridad: initial?.prioridad ?? 'normal',
       fechaLocal: isoToLocalInput(initial?.fechaVencimiento ?? null),
+      categoriaId: initial?.categoriaId ?? '',
     },
   });
+
+  const toggleTag = (id: string): void => {
+    setEtiquetaIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  };
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -57,7 +82,8 @@ export function TodoForm({ initial, onSubmit, onCancel }: TodoFormProps): React.
         descripcion: values.descripcion ? values.descripcion : null,
         prioridad: values.prioridad,
         fechaVencimiento: values.fechaLocal ? new Date(values.fechaLocal).toISOString() : null,
-        categoriaId: initial?.categoriaId ?? null,
+        categoriaId: values.categoriaId ? values.categoriaId : null,
+        etiquetaIds,
       });
     } catch (err) {
       setError('root', {
@@ -103,10 +129,39 @@ export function TodoForm({ initial, onSubmit, onCancel }: TodoFormProps): React.
         </label>
 
         <label className={styles.field}>
-          <span>Vence</span>
-          <input type="datetime-local" {...register('fechaLocal')} />
+          <span>Categoría</span>
+          <select {...register('categoriaId')}>
+            <option value="">Sin categoría</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
+
+      <label className={styles.field}>
+        <span>Vence</span>
+        <input type="datetime-local" {...register('fechaLocal')} />
+      </label>
+
+      {etiquetas.length > 0 && (
+        <fieldset className={styles.tags}>
+          <legend>Etiquetas</legend>
+          {etiquetas.map((e) => (
+            <label key={e.id} className={styles.tag}>
+              <input
+                type="checkbox"
+                checked={etiquetaIds.includes(e.id)}
+                onChange={() => toggleTag(e.id)}
+              />
+              <span className={styles.tagDot} style={{ background: e.color }} />
+              {e.nombre}
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       <div className={styles.actions}>
         <button type="button" className={styles.secondary} onClick={onCancel}>

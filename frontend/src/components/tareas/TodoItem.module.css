@@ -47,6 +47,34 @@
   font-size: 0.78rem;
 }
 
+.categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #6b7883;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.tag {
+  font-size: 0.72rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
 .due {
   color: #6b7883;
 }

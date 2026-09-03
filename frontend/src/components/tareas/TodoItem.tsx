@@ -32,6 +32,12 @@ export function TodoItem({ tarea, onToggle, onEdit, onDelete }: TodoItemProps): 
         {tarea.descripcion && <p className={styles.desc}>{tarea.descripcion}</p>}
         <div className={styles.meta}>
           <PriorityBadge prioridad={tarea.prioridad} />
+          {tarea.categoria && (
+            <span className={styles.categoria}>
+              <span className={styles.dot} style={{ background: tarea.categoria.color }} />
+              {tarea.categoria.nombre}
+            </span>
+          )}
           {tarea.fechaVencimiento && (
             <span className={vencida ? styles.overdue : styles.due}>
               {vencida ? 'Venció ' : 'Vence '}
@@ -39,6 +45,20 @@ export function TodoItem({ tarea, onToggle, onEdit, onDelete }: TodoItemProps): 
             </span>
           )}
         </div>
+
+        {tarea.etiquetas.length > 0 && (
+          <div className={styles.tags}>
+            {tarea.etiquetas.map((e) => (
+              <span
+                key={e.id}
+                className={styles.tag}
+                style={{ borderColor: e.color, color: e.color }}
+              >
+                {e.nombre}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className={styles.actions}>

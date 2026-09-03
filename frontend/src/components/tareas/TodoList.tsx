@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import type { CampoOrden, CrearTareaInput, DireccionOrden, TareaDTO } from '@todo/shared';
-import { useTodos } from '../../hooks/useTodos.js';
+import type {
+  CampoOrden,
+  CategoriaDTO,
+  CrearTareaInput,
+  DireccionOrden,
+  EtiquetaDTO,
+  TareaDTO,
+} from '@todo/shared';
+import type { UseTodos } from '../../hooks/useTodos.js';
 import { ErrorMessage } from '../common/ErrorMessage.js';
 import { Spinner } from '../common/Spinner.js';
 import { Pagination } from './Pagination.js';
@@ -18,8 +25,13 @@ const SORTS: { label: string; orden: CampoOrden; direccion: DireccionOrden }[] =
 
 type Editing = TareaDTO | 'new' | null;
 
-export function TodoList(): React.JSX.Element {
-  const todos = useTodos();
+export interface TodoListProps {
+  todos: UseTodos;
+  categorias: CategoriaDTO[];
+  etiquetas: EtiquetaDTO[];
+}
+
+export function TodoList({ todos, categorias, etiquetas }: TodoListProps): React.JSX.Element {
   const [editing, setEditing] = useState<Editing>(null);
 
   const sortIndex = SORTS.findIndex(
@@ -63,11 +75,13 @@ export function TodoList(): React.JSX.Element {
 
       {editing !== null && (
         <div className={styles.formPanel}>
-          {editing === 'new' ? (
-            <TodoForm onSubmit={handleSubmit} onCancel={() => setEditing(null)} />
-          ) : (
-            <TodoForm initial={editing} onSubmit={handleSubmit} onCancel={() => setEditing(null)} />
-          )}
+          <TodoForm
+            {...(editing !== 'new' && { initial: editing })}
+            categorias={categorias}
+            etiquetas={etiquetas}
+            onSubmit={handleSubmit}
+            onCancel={() => setEditing(null)}
+          />
         </div>
       )}
 
