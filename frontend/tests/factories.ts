@@ -1,4 +1,6 @@
 import type { CategoriaDTO, EtiquetaDTO, PaginatedResponse, TareaDTO } from '@todo/shared';
+import type { UseFilters } from '../src/hooks/useFilters.js';
+import type { UseTodos } from '../src/hooks/useTodos.js';
 
 export function makeTarea(over: Partial<TareaDTO> = {}): TareaDTO {
   return {
@@ -44,4 +46,37 @@ export function makeEtiqueta(over: Partial<EtiquetaDTO> = {}): EtiquetaDTO {
 
 export function makePage(rows: TareaDTO[]): PaginatedResponse<TareaDTO> {
   return { data: rows, meta: { page: 1, limit: 20, total: rows.length, totalPages: 1 } };
+}
+
+export function makeFilters(over: Partial<UseFilters> = {}): UseFilters {
+  return {
+    filtros: {},
+    set: vi.fn(),
+    toggleEtiqueta: vi.fn(),
+    clear: vi.fn(),
+    activos: 0,
+    ...over,
+  };
+}
+
+export function makeTodos(over: Partial<UseTodos> = {}): UseTodos {
+  return {
+    tareas: [],
+    total: 0,
+    totalPages: 1,
+    page: 1,
+    limit: 20,
+    orden: 'created_at',
+    direccion: 'desc',
+    status: 'ready',
+    error: null,
+    setPage: vi.fn(),
+    setSort: vi.fn(),
+    refresh: vi.fn().mockResolvedValue(undefined),
+    crear: vi.fn().mockResolvedValue(undefined),
+    actualizar: vi.fn().mockResolvedValue(undefined),
+    eliminar: vi.fn().mockResolvedValue(undefined),
+    toggleCompletada: vi.fn().mockResolvedValue(undefined),
+    ...over,
+  };
 }

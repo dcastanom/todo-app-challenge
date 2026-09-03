@@ -81,4 +81,24 @@ describe('useTodos', () => {
 
     expect(api.remove).toHaveBeenCalledWith('a');
   });
+
+  it('passes filters to the API and resets to page 1 when they change', async () => {
+    const { result, rerender } = renderHook(
+      ({ f }: { f: Record<string, unknown> }) => useTodos(f),
+      { initialProps: { f: {} } },
+    );
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    act(() => result.current.setPage(3));
+    await waitFor(() => expect(result.current.page).toBe(3));
+
+    rerender({ f: { prioridad: 'alta', busqueda: 'x' } });
+
+    await waitFor(() => {
+      expect(api.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, prioridad: 'alta', busqueda: 'x' }),
+      );
+    });
+    expect(result.current.page).toBe(1);
+  });
 });

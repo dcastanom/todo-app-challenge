@@ -1,33 +1,12 @@
 import userEvent from '@testing-library/user-event';
 import { render, screen } from '@testing-library/react';
 import type { UseTodos } from '../../../src/hooks/useTodos.js';
+import type { UseFilters } from '../../../src/hooks/useFilters.js';
 import { TodoList } from '../../../src/components/tareas/TodoList.js';
-import { makeTarea } from '../../factories.js';
+import { makeFilters, makeTarea, makeTodos } from '../../factories.js';
 
-function makeTodos(over: Partial<UseTodos> = {}): UseTodos {
-  return {
-    tareas: [],
-    total: 0,
-    totalPages: 1,
-    page: 1,
-    limit: 20,
-    orden: 'created_at',
-    direccion: 'desc',
-    status: 'ready',
-    error: null,
-    setPage: vi.fn(),
-    setSort: vi.fn(),
-    refresh: vi.fn().mockResolvedValue(undefined),
-    crear: vi.fn().mockResolvedValue(undefined),
-    actualizar: vi.fn().mockResolvedValue(undefined),
-    eliminar: vi.fn().mockResolvedValue(undefined),
-    toggleCompletada: vi.fn().mockResolvedValue(undefined),
-    ...over,
-  };
-}
-
-function renderList(todos: UseTodos) {
-  render(<TodoList todos={todos} categorias={[]} etiquetas={[]} />);
+function renderList(todos: UseTodos, filters: UseFilters = makeFilters()) {
+  render(<TodoList todos={todos} filters={filters} categorias={[]} etiquetas={[]} />);
 }
 
 describe('<TodoList />', () => {
@@ -41,12 +20,27 @@ describe('<TodoList />', () => {
     expect(screen.getByText(/no tienes tareas/i)).toBeInTheDocument();
   });
 
+  it('shows a filtered empty state when filters are active', () => {
+    renderList(makeTodos(), makeFilters({ activos: 2 }));
+    expect(screen.getByText(/ninguna tarea coincide/i)).toBeInTheDocument();
+  });
+
   it('opens the new-task form on demand', async () => {
     const user = userEvent.setup();
     renderList(makeTodos());
 
     await user.click(screen.getByRole('button', { name: /nueva tarea/i }));
     expect(screen.getByRole('form', { name: /nueva tarea/i })).toBeInTheDocument();
+  });
+
+  it('toggles the filter panel and shows the active count', async () => {
+    const user = userEvent.setup();
+    renderList(makeTodos(), makeFilters({ activos: 3 }));
+
+    const btn = screen.getByRole('button', { name: /filtros \(3\)/i });
+    expect(screen.queryByLabelText('Filtros')).not.toBeInTheDocument();
+    await user.click(btn);
+    expect(screen.getByLabelText('Filtros')).toBeInTheDocument();
   });
 
   it('surfaces a load error with a retry', async () => {
