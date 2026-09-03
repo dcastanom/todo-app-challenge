@@ -68,12 +68,13 @@ Cuenta demo tras el seed: `demo@todo.app` / `Password123!`
 | `db:studio` | Drizzle Studio |
 
 Un solo test backend: `npm test --workspace backend -- health`.
+Tests de integración (necesitan Postgres): `npm run test:integration --workspace backend`.
 
 ## Estado
 
 - [x] **Fase 0** — Setup: monorepo, TypeScript strict, ESLint + Prettier + Husky + commitlint, Docker Compose, CI base.
 - [x] **Fase 1** — Base de datos: 10 tablas Drizzle + migración inicial, seed determinista (500+ tareas), script de verificación.
-- [ ] **Fase 2** — 10 queries de analítica (BI).
+- [x] **Fase 2** — 10 queries de analítica (BI): `backend/src/modules/analytics/`, documentadas con salida de ejemplo en [`BI-QUERIES.md`](BI-QUERIES.md). `npm run analytics --workspace backend`.
 - [ ] Fases 3-8 — ver `PLANIFICACION.md`.
 
 Documentación de arquitectura y plan: `CLAUDE.md`, `ARQUITECTURA.md`, `PLANIFICACION.md`, `PLAN_COMMITS.md`.

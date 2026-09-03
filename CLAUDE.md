@@ -52,14 +52,21 @@ npm run db:verify   --workspace backend   # assert schema + seed support the Fas
 npm run db:reset    --workspace backend   # truncate all tables
 npm run db:studio   --workspace backend   # drizzle-kit studio
 
+# Analytics (Fase 2 — needs a seeded DB)
+npm run analytics --workspace backend                 # run the 10 BI queries + timings
+npm run analytics --workspace backend -- --explain    # + EXPLAIN ANALYZE plans
+
 # Quality (root = all workspaces)
 npm run lint | lint:fix
 npm run format | format:check
 npm run typecheck
-npm test                                  # backend Jest + frontend Vitest
-npm test --workspace backend -- health     # single backend test by path/name
-npm run test:coverage --workspace backend  # coverage (target >80%)
+npm test                                   # unit only: backend Jest + frontend Vitest (no DB)
+npm test --workspace backend -- health      # single backend test by path/name
+npm run test:integration --workspace backend  # DB-backed suites (*.integration.test.ts)
+npm run test:coverage --workspace backend   # coverage (target >80%)
 ```
+
+Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration.test.ts` = needs Postgres at `DATABASE_URL` (CI `integration` job spins up a service container).
 
 ---
 
@@ -88,7 +95,7 @@ Migrations live in `backend/drizzle/` (committed). Seed is deterministic (`faker
 
 **Design patterns to apply** (`ARQUITECTURA.md` §6): Adapter (API client), Observer (Context API), Repository/DAO, dynamic Query Builder for filters, Strategy for sorting.
 
-**The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable. Implement them in Phase 2, verified against seed data, each <1s. Raw SQL is allowed here (the one exception to "use Drizzle, not raw SQL").
+**The 10 BI queries** (`fullstack-todo-challenge-1.md` bottom) are a graded deliverable, built in Fase 2: `backend/src/modules/analytics/queries/q1..q10*.ts` (each exports the raw `Qn_SQL` string + a typed executor), aggregated by `AnalyticsService`. Raw SQL is allowed here (the one exception to "use Drizzle"). SQL is copy-paste-runnable in psql (no bound params); documented with sample output in `BI-QUERIES.md`. `npm run analytics --workspace backend [-- --explain]` runs them all with timings; `npm run test:integration --workspace backend` validates them against the seed. All execute in single-digit ms on the seed; `int8`/count columns come back as numbers (pg type parser in `db/client.ts`), rounded ratios as strings.
 
 ---
 
