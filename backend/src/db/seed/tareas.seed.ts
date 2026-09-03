@@ -10,7 +10,10 @@ import type {
 import { COUNTS, HISTORY_DAYS, PRIORIDAD_PESOS, RATIOS } from './config.js';
 import {
   addDays,
+  atWorkingHour,
+  biasToWeekday,
   chance,
+  DAY_MS,
   intBetween,
   notFuture,
   randomCreatedAt,
@@ -55,14 +58,31 @@ export function buildTareas(
     for (let i = 0; i < count; i++) {
       let createdAt = randomCreatedAt(HISTORY_DAYS);
       if (createdAt < usuarioCreado) {
-        createdAt = addDays(usuarioCreado, faker.number.float({ min: 0, max: 5 }));
+        createdAt = atWorkingHour(addDays(usuarioCreado, faker.number.float({ min: 0, max: 5 })));
       }
       createdAt = notFuture(createdAt);
 
       const completada = chance(RATIOS.tareaCompletada);
-      const completadaEn = completada
-        ? notFuture(addDays(createdAt, faker.number.float({ min: 0.05, max: 25 })))
-        : null;
+      let completadaEn: Date | null = null;
+      if (completada) {
+        // completadaEn must fall in (createdAt + 5min, now - 1min].
+        const lo = createdAt.getTime() + 5 * 60_000;
+        const hi = Date.now() - 60_000;
+        if (lo >= hi) {
+          completadaEn = new Date(Math.min(createdAt.getTime() + 60_000, Date.now()));
+        } else {
+          const spanDays = (hi - lo) / DAY_MS;
+          const offset = Math.min(
+            faker.number.float({ min: 0.02, max: 25 }),
+            spanDays * faker.number.float({ min: 0.15, max: 0.98 }),
+          );
+          let done = biasToWeekday(atWorkingHour(new Date(lo + offset * DAY_MS)));
+          if (done.getTime() < lo || done.getTime() > hi) {
+            done = atWorkingHour(new Date(lo + faker.number.float({ min: 0, max: 1 }) * (hi - lo)));
+          }
+          completadaEn = new Date(Math.min(Math.max(done.getTime(), lo), hi));
+        }
+      }
 
       const eliminada = chance(RATIOS.tareaEliminada);
       const deletedAt = eliminada
