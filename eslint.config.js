@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/build/**',
       '**/coverage/**',
       '**/node_modules/**',
+      'backend/drizzle/**',
       '**/*.config.js',
       '**/*.config.mjs',
       '**/*.config.ts',
@@ -50,6 +51,15 @@ export default tseslint.config(
     files: ['frontend/**/*.{ts,tsx}'],
     languageOptions: {
       globals: { ...globals.browser },
+    },
+  },
+  {
+    // Drizzle schema/seed files are declarative; their builder types are
+    // huge and fully inferred, and seed scripts intentionally use console.
+    files: ['backend/src/db/**/*.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'no-console': 'off',
     },
   },
   {
