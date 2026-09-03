@@ -78,6 +78,7 @@ Tests de integración (necesitan Postgres): `npm run test:integration --workspac
 - [x] **Fase 3** — Autenticación: JWT (access + refresh con rotación en Redis), bcrypt, `POST /api/v1/auth/{register,login,refresh,logout}` + `GET /profile`. Frontend: `AuthProvider` + `useAuth`, `HttpClient` (Adapter con Axios), `LoginForm`/`RegisterForm` (RHF + Zod), `ProtectedRoute` (react-router).
 - [x] **Fase 4** — CRUD de tareas: `GET/POST/PUT/DELETE /api/v1/tareas` + `PATCH /:id/completar`, con paginación y ordenamiento. Frontend: `useTodos` (optimista), `TodoList`/`TodoItem`/`TodoForm`/`Pagination`, dashboard funcional.
 - [x] **Fase 5** — Categorías & Etiquetas: CRUD (`/api/v1/{categorias,etiquetas}`), relación M:M con tareas (`etiquetaIds`, endpoints granulares), `TareaDTO` con categoría y etiquetas embebidas. Frontend: `CategoryManager`/`TagManager` en la barra lateral, selector de categoría y etiquetas en el formulario.
-- [ ] Fases 6-8 — ver `PLANIFICACION.md`.
+- [x] **Fase 6** — Filtrado multidimensional: 8 filtros + búsqueda de texto (índices `pg_trgm`) en `GET /api/v1/tareas`, con caché Redis por usuario+query (invalidación por versión). Frontend: `SearchBar` (debounce) + `FilterPanel` + `useFilters`.
+- [ ] Fases 7-8 — ver `PLANIFICACION.md`.
 
 Documentación de arquitectura y plan: `CLAUDE.md`, `ARQUITECTURA.md`, `PLANIFICACION.md`, `PLAN_COMMITS.md`.
