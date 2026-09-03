@@ -247,3 +247,117 @@ describe('DELETE /api/v1/tareas/:id', () => {
       .expect(404);
   });
 });
+
+async function crearCategoria(token: string, nombre: string): Promise<string> {
+  const res = await request(app)
+    .post('/api/v1/categorias')
+    .set(...bearer(token))
+    .send({ nombre })
+    .expect(201);
+  return res.body.data.id as string;
+}
+
+async function crearEtiqueta(token: string, nombre: string): Promise<string> {
+  const res = await request(app)
+    .post('/api/v1/etiquetas')
+    .set(...bearer(token))
+    .send({ nombre })
+    .expect(201);
+  return res.body.data.id as string;
+}
+
+describe('tareas ↔ categorías / etiquetas', () => {
+  it('embeds the category and tags when creating with them', async () => {
+    const { token } = await makeUser();
+    const catId = await crearCategoria(token, 'Trabajo');
+    const [t1, t2] = [await crearEtiqueta(token, 'urgente'), await crearEtiqueta(token, 'revisar')];
+
+    const tarea = await createTarea(token, {
+      titulo: 'Con relaciones',
+      categoriaId: catId,
+      etiquetaIds: [t1, t2],
+    });
+
+    expect(tarea.categoria).toMatchObject({ id: catId, nombre: 'Trabajo' });
+    expect(tarea.etiquetas.map((e) => e.nombre).sort()).toEqual(['revisar', 'urgente']);
+  });
+
+  it('replaces the tag set on update', async () => {
+    const { token } = await makeUser();
+    const [t1, t2] = [await crearEtiqueta(token, 'a'), await crearEtiqueta(token, 'b')];
+    const tarea = await createTarea(token, { titulo: 'x', etiquetaIds: [t1] });
+
+    const res = await request(app)
+      .put(`/api/v1/tareas/${tarea.id}`)
+      .set(...bearer(token))
+      .send({ etiquetaIds: [t2] })
+      .expect(200);
+    expect((res.body as ApiResponse<TareaDTO>).data.etiquetas.map((e) => e.id)).toEqual([t2]);
+  });
+
+  it('adds and removes a single tag via the granular endpoints', async () => {
+    const { token } = await makeUser();
+    const tagId = await crearEtiqueta(token, 'later');
+    const tarea = await createTarea(token, { titulo: 'x' });
+
+    const added = await request(app)
+      .post(`/api/v1/tareas/${tarea.id}/etiquetas`)
+      .set(...bearer(token))
+      .send({ etiquetaId: tagId })
+      .expect(200);
+    expect((added.body as ApiResponse<TareaDTO>).data.etiquetas).toHaveLength(1);
+
+    const removed = await request(app)
+      .delete(`/api/v1/tareas/${tarea.id}/etiquetas/${tagId}`)
+      .set(...bearer(token))
+      .expect(200);
+    expect((removed.body as ApiResponse<TareaDTO>).data.etiquetas).toHaveLength(0);
+  });
+
+  it('rejects a foreign tag id with 422', async () => {
+    const a = await makeUser();
+    const b = await makeUser();
+    const foreignTag = await crearEtiqueta(b.token, 'de-b');
+    const res = await request(app)
+      .post('/api/v1/tareas')
+      .set(...bearer(a.token))
+      .send({ titulo: 'x', etiquetaIds: [foreignTag] });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('ETIQUETA_INVALIDA');
+  });
+
+  it('drops a deleted category from its tasks', async () => {
+    const { token } = await makeUser();
+    const catId = await crearCategoria(token, 'Temporal');
+    const tarea = await createTarea(token, { titulo: 'x', categoriaId: catId });
+
+    await request(app)
+      .delete(`/api/v1/categorias/${catId}`)
+      .set(...bearer(token))
+      .expect(204);
+
+    const res = await request(app)
+      .get(`/api/v1/tareas/${tarea.id}`)
+      .set(...bearer(token))
+      .expect(200);
+    expect((res.body as ApiResponse<TareaDTO>).data.categoria).toBeNull();
+    expect((res.body as ApiResponse<TareaDTO>).data.categoriaId).toBeNull();
+  });
+
+  it('removes a deleted tag from its tasks', async () => {
+    const { token } = await makeUser();
+    const tagId = await crearEtiqueta(token, 'vanishing');
+    const tarea = await createTarea(token, { titulo: 'x', etiquetaIds: [tagId] });
+
+    await request(app)
+      .delete(`/api/v1/etiquetas/${tagId}`)
+      .set(...bearer(token))
+      .expect(204);
+
+    const res = await request(app)
+      .get(`/api/v1/tareas/${tarea.id}`)
+      .set(...bearer(token))
+      .expect(200);
+    expect((res.body as ApiResponse<TareaDTO>).data.etiquetas).toHaveLength(0);
+  });
+});
