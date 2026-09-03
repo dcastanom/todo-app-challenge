@@ -5,6 +5,7 @@ import { TodoList } from '../components/tareas/TodoList.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useCategorias } from '../hooks/useCategorias.js';
 import { useEtiquetas } from '../hooks/useEtiquetas.js';
+import { useFilters } from '../hooks/useFilters.js';
 import { useTodos } from '../hooks/useTodos.js';
 import styles from './DashboardPage.module.css';
 
@@ -12,7 +13,8 @@ export function DashboardPage(): React.JSX.Element {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const todos = useTodos();
+  const filters = useFilters();
+  const todos = useTodos(filters.filtros);
   const refreshTodos = (): void => void todos.refresh();
   const categorias = useCategorias(refreshTodos);
   const etiquetas = useEtiquetas(refreshTodos);
@@ -35,7 +37,12 @@ export function DashboardPage(): React.JSX.Element {
 
       <div className={styles.layout}>
         <main className={styles.main}>
-          <TodoList todos={todos} categorias={categorias.items} etiquetas={etiquetas.items} />
+          <TodoList
+            todos={todos}
+            filters={filters}
+            categorias={categorias.items}
+            etiquetas={etiquetas.items}
+          />
         </main>
         <aside className={styles.aside}>
           <CategoryManager coleccion={categorias} />

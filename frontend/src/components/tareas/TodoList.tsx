@@ -7,10 +7,13 @@ import type {
   EtiquetaDTO,
   TareaDTO,
 } from '@todo/shared';
+import type { UseFilters } from '../../hooks/useFilters.js';
 import type { UseTodos } from '../../hooks/useTodos.js';
 import { ErrorMessage } from '../common/ErrorMessage.js';
 import { Spinner } from '../common/Spinner.js';
+import { FilterPanel } from './FilterPanel.js';
 import { Pagination } from './Pagination.js';
+import { SearchBar } from './SearchBar.js';
 import { TodoForm } from './TodoForm.js';
 import { TodoItem } from './TodoItem.js';
 import styles from './TodoList.module.css';
@@ -27,12 +30,19 @@ type Editing = TareaDTO | 'new' | null;
 
 export interface TodoListProps {
   todos: UseTodos;
+  filters: UseFilters;
   categorias: CategoriaDTO[];
   etiquetas: EtiquetaDTO[];
 }
 
-export function TodoList({ todos, categorias, etiquetas }: TodoListProps): React.JSX.Element {
+export function TodoList({
+  todos,
+  filters,
+  categorias,
+  etiquetas,
+}: TodoListProps): React.JSX.Element {
   const [editing, setEditing] = useState<Editing>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const sortIndex = SORTS.findIndex(
     (s) => s.orden === todos.orden && s.direccion === todos.direccion,
@@ -47,6 +57,33 @@ export function TodoList({ todos, categorias, etiquetas }: TodoListProps): React
   return (
     <section className={styles.wrapper}>
       <div className={styles.toolbar}>
+        <SearchBar
+          value={filters.filtros.busqueda ?? ''}
+          onChange={(q) => filters.set('busqueda', q || undefined)}
+        />
+        <button
+          type="button"
+          className={showFilters ? styles.filterOn : styles.filter}
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+        >
+          Filtros{filters.activos > 0 ? ` (${filters.activos})` : ''}
+        </button>
+        <button
+          type="button"
+          className={styles.new}
+          onClick={() => setEditing('new')}
+          disabled={editing === 'new'}
+        >
+          + Nueva tarea
+        </button>
+      </div>
+
+      {showFilters && (
+        <FilterPanel filters={filters} categorias={categorias} etiquetas={etiquetas} />
+      )}
+
+      <div className={styles.sortRow}>
         <label className={styles.sort}>
           Ordenar por{' '}
           <select
@@ -63,14 +100,7 @@ export function TodoList({ todos, categorias, etiquetas }: TodoListProps): React
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          className={styles.new}
-          onClick={() => setEditing('new')}
-          disabled={editing === 'new'}
-        >
-          + Nueva tarea
-        </button>
+        <span className={styles.count}>{todos.total} tareas</span>
       </div>
 
       {editing !== null && (
@@ -90,7 +120,11 @@ export function TodoList({ todos, categorias, etiquetas }: TodoListProps): React
       {todos.status === 'loading' && todos.tareas.length === 0 ? (
         <Spinner label="Cargando tareas…" />
       ) : todos.tareas.length === 0 ? (
-        <p className={styles.empty}>No tienes tareas todavía. Crea la primera.</p>
+        <p className={styles.empty}>
+          {filters.activos > 0
+            ? 'Ninguna tarea coincide con los filtros.'
+            : 'No tienes tareas todavía. Crea la primera.'}
+        </p>
       ) : (
         <ul className={styles.list}>
           {todos.tareas.map((tarea) => (
