@@ -39,7 +39,9 @@ export function DashboardPage(): React.JSX.Element {
   const shortcuts = useMemo<ShortcutMap>(
     () => ({
       'mod+k': () => searchRef.current?.focus(),
-      'mod+n': () => setNuevaSignal((n) => n + 1),
+      // Ctrl/Cmd+N is reserved by every browser (new window) at the OS/chrome
+      // level — preventDefault() can never intercept it. Bare "n" instead.
+      n: () => setNuevaSignal((n) => n + 1),
       'mod+d': () => toggleTheme(),
       'shift+?': () => setHelpOpen(true),
       '?': () => setHelpOpen(true),

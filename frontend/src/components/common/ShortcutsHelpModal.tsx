@@ -7,7 +7,7 @@ const MOD = IS_MAC ? '⌘' : 'Ctrl';
 
 const SHORTCUTS: { keys: string; desc: string }[] = [
   { keys: `${MOD} + K`, desc: 'Buscar tareas' },
-  { keys: `${MOD} + N`, desc: 'Nueva tarea' },
+  { keys: 'N', desc: 'Nueva tarea' },
   { keys: `${MOD} + D`, desc: 'Alternar modo oscuro' },
   { keys: '?', desc: 'Mostrar esta ayuda' },
   { keys: 'Esc', desc: 'Cerrar formulario o diálogo' },

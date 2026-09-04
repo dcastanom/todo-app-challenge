@@ -23,7 +23,7 @@ test.describe('features bonus', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.keyboard.press('ControlOrMeta+n');
+    await page.keyboard.press('n');
     await expect(page.getByRole('form', { name: 'Nueva tarea' })).toBeVisible();
   });
 

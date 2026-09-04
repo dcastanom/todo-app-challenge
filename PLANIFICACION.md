@@ -251,7 +251,7 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
   - DoD: Feature + tests (serializador CSV, `serializeExport`, integración, `ExportMenu`, E2E descarga) ✅
 
 - [x] **US-098: Atajos de Teclado**
-  - AC: ⌘/Ctrl+K (buscar), ⌘/Ctrl+N (nueva), ⌘/Ctrl+D (tema), ? (ayuda), Esc (cerrar)
+  - AC: ⌘/Ctrl+K (buscar), N (nueva — Ctrl/Cmd+N está reservado por el navegador para "nueva ventana" a nivel de shell, no interceptable con `preventDefault`), ⌘/Ctrl+D (tema), ? (ayuda), Esc (cerrar)
   - AC: Help modal (`ShortcutsHelpModal`)
   - DoD: Feature + tests (`useKeyboardShortcuts`, modal, E2E) ✅
 
