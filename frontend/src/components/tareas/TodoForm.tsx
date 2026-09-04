@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useFormDraft } from '../../hooks/useFormDraft.js';
 import {
   PRIORIDADES,
   type CategoriaDTO,
@@ -52,6 +53,10 @@ export function TodoForm({
   onSubmit,
   onCancel,
 }: TodoFormProps): React.JSX.Element {
+  // Only a brand-new task keeps an offline draft; editing does not.
+  const draft = useFormDraft<FormValues>('tarea-nueva');
+  const restored = initial ? null : draft.initial;
+
   const [etiquetaIds, setEtiquetaIds] = useState<string[]>(
     initial?.etiquetas.map((e) => e.id) ?? [],
   );
@@ -59,17 +64,25 @@ export function TodoForm({
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      titulo: initial?.titulo ?? '',
-      descripcion: initial?.descripcion ?? '',
-      prioridad: initial?.prioridad ?? 'normal',
-      fechaLocal: isoToLocalInput(initial?.fechaVencimiento ?? null),
-      categoriaId: initial?.categoriaId ?? '',
+      titulo: restored?.titulo ?? initial?.titulo ?? '',
+      descripcion: restored?.descripcion ?? initial?.descripcion ?? '',
+      prioridad: restored?.prioridad ?? initial?.prioridad ?? 'normal',
+      fechaLocal: restored?.fechaLocal ?? isoToLocalInput(initial?.fechaVencimiento ?? null),
+      categoriaId: restored?.categoriaId ?? initial?.categoriaId ?? '',
     },
   });
+
+  // Persist the in-progress new task so a reload / going offline doesn't lose it.
+  useEffect(() => {
+    if (initial) return;
+    const sub = watch((values) => draft.save(values as FormValues));
+    return () => sub.unsubscribe();
+  }, [initial, watch, draft]);
 
   const toggleTag = (id: string): void => {
     setEtiquetaIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
@@ -85,6 +98,7 @@ export function TodoForm({
         categoriaId: values.categoriaId ? values.categoriaId : null,
         etiquetaIds,
       });
+      if (!initial) draft.clear();
     } catch (err) {
       setError('root', {
         message: err instanceof HttpError ? err.message : 'No se pudo guardar la tarea',
@@ -102,6 +116,12 @@ export function TodoForm({
       {errors.root && (
         <p className={styles.formError} role="alert">
           {errors.root.message}
+        </p>
+      )}
+
+      {restored && (
+        <p className={styles.draftNote} role="status">
+          Borrador restaurado.
         </p>
       )}
 

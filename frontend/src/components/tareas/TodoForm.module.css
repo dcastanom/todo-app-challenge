@@ -4,6 +4,12 @@
   gap: 0.9rem;
 }
 
+.draftNote {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
 .field {
   display: flex;
   flex-direction: column;

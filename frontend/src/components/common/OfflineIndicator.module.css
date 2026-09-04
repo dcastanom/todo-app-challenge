@@ -1,0 +1,10 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0.55rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  background: #b8860b;
+  color: #fff;
+}
