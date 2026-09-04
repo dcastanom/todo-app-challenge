@@ -10,8 +10,10 @@ build/
 # Test / coverage
 coverage/
 playwright-report/
+blob-report/
 test-results/
 .nyc_output/
+e2e/.cache/
 
 # Environment
 .env
@@ -36,6 +38,7 @@ Thumbs.db
 .eslintcache
 .cache/
 .turbo/
+.vite/
 
 # Docker volumes (local)
 docker/volumes/
