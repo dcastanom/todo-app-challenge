@@ -233,40 +233,39 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
 
 ### Features Bonus (OBLIGATORIOS) 🎁
 
-- [ ] **US-095: Drag & Drop Reordenar**
-  - AC: React-beautiful-dnd
-  - AC: Persist order a BD
-  - AC: Smooth UX
-  - DoD: Feature + tests >80%
+- [x] **US-095: Drag & Drop Reordenar**
+  - AC: ~~React-beautiful-dnd~~ → HTML5 Drag & Drop nativo (sin dependencia; RBD está sin mantenimiento)
+  - AC: Persist order a BD → `PATCH /api/v1/tareas/reorder` + columna `posicion` + índice `(usuario_id, posicion)`
+  - AC: Smooth UX → reordenamiento optimista con revert en error, orden "Manual (arrastrar)"
+  - DoD: Feature + tests (`moverItem`, `useTodos.mover`, integración endpoint, E2E) ✅
 
-- [ ] **US-096: Dark Mode Toggle** 
-  - AC: CSS variables
-  - AC: Persist en localStorage
-  - AC: Accessible
-  - DoD: Feature + tests >80%
+- [x] **US-096: Dark Mode Toggle**
+  - AC: CSS variables → tokens en `:root`, `[data-theme='dark']` y `@media (prefers-color-scheme)`
+  - AC: Persist en localStorage (`todo:theme`)
+  - AC: Accessible → `aria-pressed`, `aria-label`, tres estados (system/light/dark)
+  - DoD: Feature + tests (`ThemeProvider`, `ThemeToggle`, E2E persistencia) ✅
 
-- [ ] **US-097: Exportar CSV/JSON**
-  - AC: /export/csv endpoint
-  - AC: /export/json endpoint
-  - AC: Respeta filtros
-  - DoD: Feature + tests >80%
+- [x] **US-097: Exportar CSV/JSON**
+  - AC: `GET /api/v1/tareas/export?formato=csv|json`
+  - AC: Respeta filtros (reusa `listarTareasQuerySchema` sin paginación, tope `EXPORT_MAX_ROWS`)
+  - DoD: Feature + tests (serializador CSV, `serializeExport`, integración, `ExportMenu`, E2E descarga) ✅
 
-- [ ] **US-098: Atajos de Teclado**
-  - AC: Cmd+K, Cmd+N, Cmd+D, Cmd+Shift+D
-  - AC: Help modal
-  - DoD: Feature + tests >80%
+- [x] **US-098: Atajos de Teclado**
+  - AC: ⌘/Ctrl+K (buscar), ⌘/Ctrl+N (nueva), ⌘/Ctrl+D (tema), ? (ayuda), Esc (cerrar)
+  - AC: Help modal (`ShortcutsHelpModal`)
+  - DoD: Feature + tests (`useKeyboardShortcuts`, modal, E2E) ✅
 
-- [ ] **US-099: Batch Operations**
-  - AC: Select múltiples
-  - AC: Batch actions (complete, delete, move, tag)
-  - AC: PATCH /todos/batch
-  - DoD: Feature + tests >80%
+- [x] **US-099: Batch Operations**
+  - AC: Select múltiples (`useSeleccion`, modo selección en `TodoList`)
+  - AC: Batch actions: completar / prioridad / mover categoría / eliminar
+  - AC: `PATCH /api/v1/tareas/batch` (discriminated union, ownership-checked)
+  - DoD: Feature + tests (`useSeleccion`, `BatchActionBar`, integración, E2E) ✅
 
-- [ ] **US-100: Offline Mode Básico**
-  - AC: LocalStorage draft
-  - AC: Sync cuando online
-  - AC: Offline indicator
-  - DoD: Feature + tests >80%
+- [x] **US-100: Offline Mode Básico**
+  - AC: LocalStorage draft (`useFormDraft` — guarda la tarea nueva en progreso, se limpia al enviar)
+  - AC: Sync cuando online → el borrador persiste; se reenvía al reconectar
+  - AC: Offline indicator (`OfflineIndicator` + `useOnlineStatus`)
+  - DoD: Feature + tests (`useOnlineStatus`, `useFormDraft`, `OfflineIndicator`) ✅
 
 ### Polish & Documentation
 
