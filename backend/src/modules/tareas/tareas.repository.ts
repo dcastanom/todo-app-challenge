@@ -17,6 +17,9 @@ import {
   type SQL,
 } from 'drizzle-orm';
 import type { ListarTareasQuery } from '@todo/shared';
+
+/** The filter + sort slice — `buildWhere`/export don't need pagination. */
+type TareaConsulta = Omit<ListarTareasQuery, 'page' | 'limit'>;
 import type { Database } from '../../db/client.js';
 import {
   categorias,
@@ -37,6 +40,7 @@ const ORDEN_COLUMN = {
   fecha_vencimiento: tareas.fechaVencimiento,
   titulo: tareas.titulo,
   prioridad: prioridadRank,
+  posicion: tareas.posicion,
 } as const;
 
 const withRelaciones = {
@@ -57,7 +61,7 @@ export class TareasRepository {
   constructor(private readonly db: Database) {}
 
   /** Composes the WHERE clause from ownership + every active filter. */
-  private buildWhere(usuarioId: string, q: ListarTareasQuery): SQL {
+  private buildWhere(usuarioId: string, q: TareaConsulta): SQL {
     const parts: (SQL | undefined)[] = [eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt)];
 
     if (q.completada !== undefined) parts.push(eq(tareas.completada, q.completada));
@@ -117,6 +121,73 @@ export class TareasRepository {
     ]);
 
     return { rows, total: totalRow?.value ?? 0 };
+  }
+
+  /** Filtered rows with no pagination — for CSV/JSON export (hard-capped). */
+  listForExport(usuarioId: string, query: TareaConsulta, limit: number) {
+    const where = this.buildWhere(usuarioId, query);
+    const dir = query.direccion === 'asc' ? asc : desc;
+    return this.db.query.tareas.findMany({
+      where,
+      with: withRelaciones,
+      orderBy: [dir(ORDEN_COLUMN[query.orden]), desc(tareas.createdAt)],
+      limit,
+    });
+  }
+
+  /** The subset of `ids` that are live tasks owned by the user. */
+  async ownedIds(usuarioId: string, ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.db
+      .select({ id: tareas.id })
+      .from(tareas)
+      .where(
+        and(eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt), inArray(tareas.id, ids)),
+      );
+    return rows.map((r) => r.id);
+  }
+
+  /** Writes `posicion = index` for every id, in one statement. */
+  async reorder(usuarioId: string, ids: string[]): Promise<void> {
+    const whenClauses = sql.join(
+      ids.map((id, i) => sql`when ${tareas.id} = ${id} then ${i}`),
+      sql.raw(' '),
+    );
+    await this.db
+      .update(tareas)
+      .set({
+        posicion: sql`case ${whenClauses} else ${tareas.posicion} end`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt), inArray(tareas.id, ids)),
+      );
+  }
+
+  /** Applies one patch to many owned tasks; returns the row count touched. */
+  async bulkUpdate(usuarioId: string, ids: string[], patch: Partial<NuevaTarea>): Promise<number> {
+    if (ids.length === 0) return 0;
+    const rows = await this.db
+      .update(tareas)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(
+        and(eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt), inArray(tareas.id, ids)),
+      )
+      .returning({ id: tareas.id });
+    return rows.length;
+  }
+
+  /** Soft-deletes many owned tasks; returns the row count touched. */
+  async bulkSoftDelete(usuarioId: string, ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const rows = await this.db
+      .update(tareas)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(eq(tareas.usuarioId, usuarioId), isNull(tareas.deletedAt), inArray(tareas.id, ids)),
+      )
+      .returning({ id: tareas.id });
+    return rows.length;
   }
 
   findById(usuarioId: string, id: string) {

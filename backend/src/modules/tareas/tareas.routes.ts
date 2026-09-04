@@ -2,18 +2,26 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   actualizarTareaSchema,
+  batchTareasSchema,
   crearTareaSchema,
+  exportTareasQuerySchema,
   listarTareasQuerySchema,
+  reordenarTareasSchema,
   type ActualizarTareaInput,
   type ApiResponse,
+  type BatchResultado,
+  type BatchTareasInput,
   type CrearTareaInput,
+  type ExportTareasQuery,
   type ListarTareasQuery,
+  type ReordenarTareasInput,
   type TareaDTO,
 } from '@todo/shared';
 import { db } from '../../db/client.js';
 import { AppError } from '../../middleware/error-handler.js';
 import { idParam, uuidParam, validateBody, validateQuery } from '../../middleware/validate.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { serializeExport } from './tareas.export.js';
 import { TareaService } from './tareas.service.js';
 
 export const tareasRouter: Router = Router();
@@ -35,6 +43,28 @@ tareasRouter.post('/', validateBody(crearTareaSchema), async (req, res) => {
     data: await tareas.create(userId(req), req.body as CrearTareaInput),
   };
   res.status(201).json(body);
+});
+
+tareasRouter.get('/export', validateQuery(exportTareasQuerySchema), async (req, res) => {
+  const query = req.validatedQuery as ExportTareasQuery;
+  const tareasList = await tareas.listForExport(userId(req), query);
+  const { body, contentType, filename } = serializeExport(tareasList, query.formato);
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(body);
+});
+
+tareasRouter.patch('/reorder', validateBody(reordenarTareasSchema), async (req, res) => {
+  const { ids } = req.body as ReordenarTareasInput;
+  await tareas.reorder(userId(req), ids);
+  res.status(204).send();
+});
+
+tareasRouter.patch('/batch', validateBody(batchTareasSchema), async (req, res) => {
+  const body: ApiResponse<BatchResultado> = {
+    data: await tareas.batch(userId(req), req.body as BatchTareasInput),
+  };
+  res.json(body);
 });
 
 tareasRouter.get('/:id', async (req, res) => {

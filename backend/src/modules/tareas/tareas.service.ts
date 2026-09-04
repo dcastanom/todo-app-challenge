@@ -1,10 +1,14 @@
 import type {
   ActualizarTareaInput,
+  BatchResultado,
+  BatchTareasInput,
   CrearTareaInput,
+  ExportTareasQuery,
   ListarTareasQuery,
   PaginatedResponse,
   TareaDTO,
 } from '@todo/shared';
+import { EXPORT_MAX_ROWS } from '@todo/shared';
 import type { Database } from '../../db/client.js';
 import type { NuevaTarea } from '../../db/schema/index.js';
 import { invalidateUser, withUserCache } from '../../lib/cache.js';
@@ -171,5 +175,59 @@ export class TareaService {
       throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Tarea no encontrada');
     }
     TareaService.invalidate(usuarioId);
+  }
+
+  /** Persists the manual drag & drop order. Every id must be owned. */
+  async reorder(usuarioId: string, ids: string[]): Promise<void> {
+    const owned = new Set(await this.repo.ownedIds(usuarioId, ids));
+    if (owned.size !== new Set(ids).size) {
+      throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Alguna tarea no existe o no te pertenece');
+    }
+    await this.repo.reorder(usuarioId, ids);
+    TareaService.invalidate(usuarioId);
+  }
+
+  /** Applies one bulk action to many owned tasks. */
+  async batch(usuarioId: string, input: BatchTareasInput): Promise<BatchResultado> {
+    const unique = [...new Set(input.ids)];
+    const owned = await this.repo.ownedIds(usuarioId, unique);
+    if (owned.length !== unique.length) {
+      throw new AppError(404, 'TAREA_NO_ENCONTRADA', 'Alguna tarea no existe o no te pertenece');
+    }
+
+    let afectadas: number;
+    switch (input.accion.tipo) {
+      case 'completar': {
+        const { completada } = input.accion;
+        afectadas = await this.repo.bulkUpdate(usuarioId, owned, {
+          completada,
+          completadaEn: completada ? new Date() : null,
+        });
+        break;
+      }
+      case 'prioridad':
+        afectadas = await this.repo.bulkUpdate(usuarioId, owned, {
+          prioridad: input.accion.prioridad,
+        });
+        break;
+      case 'categoria':
+        await this.assertCategoria(usuarioId, input.accion.categoriaId);
+        afectadas = await this.repo.bulkUpdate(usuarioId, owned, {
+          categoriaId: input.accion.categoriaId,
+        });
+        break;
+      case 'eliminar':
+        afectadas = await this.repo.bulkSoftDelete(usuarioId, owned);
+        break;
+    }
+
+    TareaService.invalidate(usuarioId);
+    return { afectadas };
+  }
+
+  /** Filtered task list with no pagination, capped at `EXPORT_MAX_ROWS`. */
+  async listForExport(usuarioId: string, query: ExportTareasQuery): Promise<TareaDTO[]> {
+    const rows = await this.repo.listForExport(usuarioId, query, EXPORT_MAX_ROWS);
+    return rows.map(toTareaDTO);
   }
 }
