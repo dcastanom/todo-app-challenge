@@ -8,6 +8,7 @@ const { env } = await import('./config/env.js');
 const { logger } = await import('./config/logger.js');
 const { pool } = await import('./db/client.js');
 const { closeRedis } = await import('./config/redis.js');
+const { createRealtimeServer } = await import('./realtime/socket-server.js');
 
 const app = createApp();
 
@@ -15,12 +16,15 @@ const server = app.listen(env.PORT, () => {
   logger.info(`Backend listening on http://localhost:${String(env.PORT)} (${env.NODE_ENV})`);
 });
 
+const io = createRealtimeServer(server);
+
 let shuttingDown = false;
 
 function shutdown(signal: string): void {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info(`${signal} received, shutting down`);
+  void io.close();
   server.close(() => {
     void Promise.allSettled([pool.end(), closeRedis()]).then(() => {
       logger.info('Connections closed');
