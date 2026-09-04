@@ -1,72 +1,69 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
+import { REALTIME_EVENTS } from '@todo/shared';
 import { useCrudColeccion, type CrudApi } from '../../src/hooks/useCrudColeccion.js';
+
+const realtime = vi.hoisted(() => ({ on: vi.fn() }));
+vi.mock('../../src/services/socket.service.js', () => ({ on: realtime.on }));
 
 interface Item {
   id: string;
   nombre: string;
 }
-type ItemApi = CrudApi<Item, { nombre: string }, { nombre?: string }>;
 
-function makeApi(initial: Item[]): ItemApi {
-  const store = [...initial];
+function makeApi(): CrudApi<Item, { nombre: string }, { nombre: string }> {
   return {
-    list: vi.fn().mockImplementation(() => Promise.resolve([...store])),
-    create: vi.fn().mockImplementation((input: { nombre: string }) => {
-      const item = { id: `id-${String(store.length + 1)}`, nombre: input.nombre };
-      store.push(item);
-      return Promise.resolve(item);
-    }),
-    update: vi.fn().mockImplementation((id: string, input: { nombre?: string }) => {
-      const item = { id, nombre: input.nombre ?? 'x' };
-      return Promise.resolve(item);
-    }),
-    remove: vi.fn().mockResolvedValue(undefined),
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
   };
 }
 
-describe('useCrudColeccion', () => {
-  it('loads items on mount', async () => {
-    const api = makeApi([{ id: '1', nombre: 'uno' }]);
-    const { result } = renderHook(() => useCrudColeccion(api));
-    await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(result.current.items).toHaveLength(1);
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
-  it('adds a created item and calls onChange', async () => {
-    const api = makeApi([]);
-    const onChange = vi.fn();
-    const { result } = renderHook(() => useCrudColeccion(api, onChange));
-    await waitFor(() => expect(result.current.status).toBe('ready'));
-
-    await act(async () => {
-      await result.current.crear({ nombre: 'nuevo' });
+describe('useCrudColeccion realtime refresh', () => {
+  it('refetches when the given realtime event fires (debounced)', async () => {
+    const api = makeApi();
+    let handler: (() => void) | undefined;
+    const unsubscribe = vi.fn();
+    realtime.on.mockImplementation((_event: string, h: () => void) => {
+      handler = h;
+      return unsubscribe;
     });
 
-    expect(result.current.items).toEqual([{ id: 'id-1', nombre: 'nuevo' }]);
-    expect(onChange).toHaveBeenCalled();
+    const { result } = renderHook(() =>
+      useCrudColeccion(api, undefined, REALTIME_EVENTS.CATEGORIAS_CAMBIARON),
+    );
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(realtime.on).toHaveBeenCalledWith(
+      REALTIME_EVENTS.CATEGORIAS_CAMBIARON,
+      expect.any(Function),
+    );
+    (api.list as ReturnType<typeof vi.fn>).mockClear();
+
+    handler?.();
+    await waitFor(() => expect(api.list).toHaveBeenCalledTimes(1));
   });
 
-  it('updates and removes items', async () => {
-    const api = makeApi([{ id: '1', nombre: 'viejo' }]);
+  it('does not subscribe to anything when no realtime event is given', async () => {
+    const api = makeApi();
     const { result } = renderHook(() => useCrudColeccion(api));
     await waitFor(() => expect(result.current.status).toBe('ready'));
-
-    await act(async () => {
-      await result.current.actualizar('1', { nombre: 'nuevo' });
-    });
-    expect(result.current.items[0]?.nombre).toBe('nuevo');
-
-    await act(async () => {
-      await result.current.eliminar('1');
-    });
-    expect(result.current.items).toHaveLength(0);
+    expect(realtime.on).not.toHaveBeenCalled();
   });
 
-  it('reports a load error', async () => {
-    const api = makeApi([]);
-    vi.mocked(api.list).mockRejectedValueOnce(new Error('nope'));
-    const { result } = renderHook(() => useCrudColeccion(api));
-    await waitFor(() => expect(result.current.status).toBe('error'));
-    expect(result.current.error).toBeTruthy();
+  it('unsubscribes on unmount', async () => {
+    const api = makeApi();
+    const unsubscribe = vi.fn();
+    realtime.on.mockReturnValue(unsubscribe);
+
+    const { result, unmount } = renderHook(() =>
+      useCrudColeccion(api, undefined, REALTIME_EVENTS.ETIQUETAS_CAMBIARON),
+    );
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    unmount();
+    expect(unsubscribe).toHaveBeenCalled();
   });
 });

@@ -13,6 +13,11 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('../../src/services/auth.service.js', () => ({ authApi: api }));
 
+// Keeps this suite hermetic — without this, becoming "authenticated" would
+// spin up a real socket.io-client connection attempt as a side effect.
+const socketService = vi.hoisted(() => ({ connect: vi.fn(), disconnect: vi.fn() }));
+vi.mock('../../src/services/socket.service.js', () => socketService);
+
 const demo: UsuarioPublico = {
   id: '1',
   email: 'demo@todo.app',
@@ -62,11 +67,12 @@ describe('<AuthProvider />', () => {
     expect(api.profile).not.toHaveBeenCalled();
   });
 
-  it('hydrates from a stored token', async () => {
+  it('hydrates from a stored token and connects the realtime socket', async () => {
     localStorage.setItem('todo.accessToken', 'stored');
     api.profile.mockResolvedValue(demo);
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('user')).toHaveTextContent('demo'));
+    expect(socketService.connect).toHaveBeenCalledWith('stored');
   });
 
   it('clears an invalid stored token', async () => {
@@ -106,6 +112,7 @@ describe('<AuthProvider />', () => {
 
     await user.click(screen.getByText('logout'));
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('unauthenticated'));
+    expect(socketService.disconnect).toHaveBeenCalled();
   });
 
   it('reacts to the session-expired event', async () => {

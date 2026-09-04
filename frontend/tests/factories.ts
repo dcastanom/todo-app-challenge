@@ -1,4 +1,10 @@
-import type { CategoriaDTO, EtiquetaDTO, PaginatedResponse, TareaDTO } from '@todo/shared';
+import type {
+  CategoriaDTO,
+  EstadisticasDTO,
+  EtiquetaDTO,
+  PaginatedResponse,
+  TareaDTO,
+} from '@todo/shared';
 import type { UseFilters } from '../src/hooks/useFilters.js';
 import type { UseSeleccion } from '../src/hooks/useSeleccion.js';
 import type { UseTodos } from '../src/hooks/useTodos.js';
@@ -41,6 +47,22 @@ export function makeEtiqueta(over: Partial<EtiquetaDTO> = {}): EtiquetaDTO {
     nombre: 'urgente',
     color: '#c0392b',
     createdAt: '2026-01-01T00:00:00.000Z',
+    ...over,
+  };
+}
+
+export function makeEstadisticas(over: Partial<EstadisticasDTO> = {}): EstadisticasDTO {
+  return {
+    total: 3,
+    completadas: 1,
+    pendientes: 2,
+    vencidas: 0,
+    tasaCompletado: 1 / 3,
+    porPrioridad: [{ prioridad: 'normal', total: 3, completadas: 1 }],
+    porCategoria: [
+      { categoriaId: null, nombre: 'Sin categoría', color: null, total: 3, completadas: 1 },
+    ],
+    actividad: [{ fecha: '2026-01-01', creadas: 3, completadas: 1 }],
     ...over,
   };
 }

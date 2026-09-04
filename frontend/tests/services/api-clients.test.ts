@@ -1,10 +1,11 @@
 import type { HttpClient } from '../../src/services/http.js';
 import { AuthApi } from '../../src/services/auth.service.js';
 import { CategoriasApi } from '../../src/services/categorias.service.js';
+import { EstadisticasApi } from '../../src/services/estadisticas.service.js';
 import { EtiquetasApi } from '../../src/services/etiquetas.service.js';
 import { TareasApi } from '../../src/services/tareas.service.js';
 import { tokenStorage } from '../../src/services/token-storage.js';
-import { makeCategoria, makeEtiqueta, makeTarea } from '../factories.js';
+import { makeCategoria, makeEstadisticas, makeEtiqueta, makeTarea } from '../factories.js';
 
 type MockHttp = { [K in keyof HttpClient]: ReturnType<typeof vi.fn> };
 
@@ -125,5 +126,18 @@ describe('resource API clients hit the right endpoints', () => {
     expect(http.get).toHaveBeenCalledWith('/etiquetas');
     expect(http.put).toHaveBeenCalledWith('/categorias/c1', { nombre: 'y' });
     expect(http.put).toHaveBeenCalledWith('/etiquetas/e1', { color: '#000000' });
+  });
+
+  it('EstadisticasApi forwards the window size and returns the summary', async () => {
+    const http = mockHttp();
+    http.get.mockResolvedValue({ data: makeEstadisticas() });
+    const api = new EstadisticasApi(http);
+
+    const sinVentana = await api.resumen();
+    expect(http.get).toHaveBeenCalledWith('/estadisticas', { params: undefined });
+    expect(sinVentana.total).toBe(3);
+
+    await api.resumen(30);
+    expect(http.get).toHaveBeenCalledWith('/estadisticas', { params: { dias: 30 } });
   });
 });
