@@ -1,0 +1,83 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 8rem;
+  padding: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 1.5rem;
+  flex: 1;
+}
+
+.barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 6rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.creadas,
+.completadas {
+  width: 0.4rem;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s ease;
+}
+
+.creadas {
+  background: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.completadas {
+  background: var(--color-success);
+}
+
+.fecha {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.leyenda {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dotCreadas,
+.dotCompletadas {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.dotCreadas {
+  background: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.dotCompletadas {
+  background: var(--color-success);
+}

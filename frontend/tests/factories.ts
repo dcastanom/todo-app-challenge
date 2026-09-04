@@ -1,4 +1,10 @@
-import type { CategoriaDTO, EtiquetaDTO, PaginatedResponse, TareaDTO } from '@todo/shared';
+import type {
+  CategoriaDTO,
+  EstadisticasDTO,
+  EtiquetaDTO,
+  PaginatedResponse,
+  TareaDTO,
+} from '@todo/shared';
 import type { UseFilters } from '../src/hooks/useFilters.js';
 import type { UseSeleccion } from '../src/hooks/useSeleccion.js';
 import type { UseTodos } from '../src/hooks/useTodos.js';
@@ -45,6 +51,22 @@ export function makeEtiqueta(over: Partial<EtiquetaDTO> = {}): EtiquetaDTO {
   };
 }
 
+export function makeEstadisticas(over: Partial<EstadisticasDTO> = {}): EstadisticasDTO {
+  return {
+    total: 3,
+    completadas: 1,
+    pendientes: 2,
+    vencidas: 0,
+    tasaCompletado: 1 / 3,
+    porPrioridad: [{ prioridad: 'normal', total: 3, completadas: 1 }],
+    porCategoria: [
+      { categoriaId: null, nombre: 'Sin categoría', color: null, total: 3, completadas: 1 },
+    ],
+    actividad: [{ fecha: '2026-01-01', creadas: 3, completadas: 1 }],
+    ...over,
+  };
+}
+
 export function makePage(rows: TareaDTO[]): PaginatedResponse<TareaDTO> {
   return { data: rows, meta: { page: 1, limit: 20, total: rows.length, totalPages: 1 } };
 }
@@ -61,10 +83,11 @@ export function makeFilters(over: Partial<UseFilters> = {}): UseFilters {
 }
 
 export function makeSeleccion(over: Partial<UseSeleccion> = {}): UseSeleccion {
+  const seleccionados = over.seleccionados ?? new Set<string>();
   return {
-    seleccionados: new Set<string>(),
-    count: 0,
-    isSelected: vi.fn().mockReturnValue(false),
+    seleccionados,
+    count: seleccionados.size,
+    isSelected: vi.fn((id: string) => seleccionados.has(id)),
     toggle: vi.fn(),
     toggleTodos: vi.fn(),
     clear: vi.fn(),

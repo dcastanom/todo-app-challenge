@@ -38,13 +38,22 @@ describe('<TodoItem />', () => {
     const tarea = makeTarea({ id: 't7' });
     const h = setup(tarea);
 
-    await user.click(screen.getByRole('checkbox'));
+    // The button's accessible name is its aria-label ("Marcar … como
+    // completada"), not the shorter visible text ("Completar").
+    await user.click(screen.getByRole('button', { name: /como completada/i }));
     await user.click(screen.getByRole('button', { name: /editar/i }));
     await user.click(screen.getByRole('button', { name: /eliminar/i }));
 
     expect(h.onToggle).toHaveBeenCalledWith('t7');
     expect(h.onEdit).toHaveBeenCalledWith(tarea);
     expect(h.onDelete).toHaveBeenCalledWith('t7');
+  });
+
+  it('shows "Marcar pendiente" instead of "Completar" once the task is done', () => {
+    setup(makeTarea({ completada: true }));
+    expect(screen.getByText('Marcar pendiente')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /como pendiente/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /como completada/i })).not.toBeInTheDocument();
   });
 
   it('flags an overdue, uncompleted task', () => {

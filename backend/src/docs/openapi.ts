@@ -8,7 +8,7 @@ export const openapiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'Todo App API',
-    version: '1.0.0',
+    version: '1.1.0',
     description:
       'API REST de la aplicación de tareas: autenticación JWT, CRUD de tareas, ' +
       'categorías y etiquetas, filtrado multidimensional, operaciones en lote y exportación.',
@@ -19,6 +19,7 @@ export const openapiSpec = {
     { name: 'tareas', description: 'CRUD, filtros, reorden, lote y exportación' },
     { name: 'categorias', description: 'CRUD de categorías' },
     { name: 'etiquetas', description: 'CRUD de etiquetas' },
+    { name: 'estadisticas', description: 'Resumen de estadísticas del usuario' },
     { name: 'health', description: 'Liveness / readiness' },
   ],
   components: {
@@ -628,6 +629,27 @@ export const openapiSpec = {
         tags: ['etiquetas'],
         summary: 'Eliminar etiqueta',
         responses: { '204': { description: 'Eliminada' } },
+      },
+    },
+    '/estadisticas': {
+      get: {
+        tags: ['estadisticas'],
+        summary: 'Resumen de estadísticas del usuario autenticado',
+        parameters: [
+          {
+            name: 'dias',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer', minimum: 7, maximum: 90, default: 14 },
+            description: 'Tamaño de la ventana de la serie diaria de actividad',
+          },
+        ],
+        responses: {
+          '200': {
+            description:
+              'Totales, tasa de completado, desglose por prioridad/categoría y actividad diaria',
+          },
+        },
       },
     },
     '/health': {

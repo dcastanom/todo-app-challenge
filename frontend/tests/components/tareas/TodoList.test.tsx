@@ -75,7 +75,7 @@ describe('<TodoList />', () => {
     expect(todos.setSort).toHaveBeenCalledWith('prioridad', 'desc');
   });
 
-  it('persists a drag reorder when sorting manually', () => {
+  it('persists a drag reorder when already sorted manually, without switching sort again', () => {
     const todos = makeTodos({
       orden: 'posicion',
       direccion: 'asc',
@@ -90,10 +90,47 @@ describe('<TodoList />', () => {
     fireEvent.dragEnd(first!);
 
     expect(todos.mover).toHaveBeenCalledWith(0, 1);
+    expect(todos.setSort).not.toHaveBeenCalled();
   });
 
-  it('reveals the batch bar once tasks are selected', async () => {
-    const user = userEvent.setup();
+  it('drag & drop also works from a non-manual sort, switching into manual order', () => {
+    const todos = makeTodos({
+      orden: 'created_at',
+      direccion: 'desc',
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    const [first, second] = screen.getAllByRole('listitem');
+    // draggable — not gated behind the "Manual (arrastrar)" sort option.
+    expect(first).toHaveAttribute('draggable', 'true');
+
+    fireEvent.dragStart(first!);
+    fireEvent.dragEnter(second!);
+    fireEvent.dragEnd(first!);
+
+    expect(todos.mover).toHaveBeenCalledWith(0, 1);
+    expect(todos.setSort).toHaveBeenCalledWith('posicion', 'asc');
+  });
+
+  it('does not persist a drag that ends on its own starting position', () => {
+    const todos = makeTodos({
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    const [first] = screen.getAllByRole('listitem');
+    fireEvent.dragStart(first!);
+    fireEvent.dragEnter(first!);
+    fireEvent.dragEnd(first!);
+
+    expect(todos.mover).not.toHaveBeenCalled();
+    expect(todos.setSort).not.toHaveBeenCalled();
+  });
+
+  it('shows the batch bar as soon as any task is selected, no mode toggle needed', () => {
     const seleccion = makeSeleccion({ count: 2, seleccionados: new Set(['t1', 't2']) });
     renderList(
       makeTodos({ tareas: [makeTarea({ id: 't1' })], total: 1 }),
@@ -101,8 +138,67 @@ describe('<TodoList />', () => {
       seleccion,
     );
 
-    expect(screen.queryByText('2 seleccionadas')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /seleccionar/i }));
+    expect(screen.getByRole('region', { name: /acciones en lote/i })).toBeInTheDocument();
     expect(screen.getByText('2 seleccionadas')).toBeInTheDocument();
+  });
+
+  it('every task row exposes its own selection checkbox without pressing anything first', () => {
+    const todos = makeTodos({
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    expect(screen.getByRole('checkbox', { name: /seleccionar "uno"/i })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /seleccionar "dos"/i })).toBeInTheDocument();
+  });
+
+  it('the "select all" checkbox toggles every currently visible task', async () => {
+    const user = userEvent.setup();
+    const seleccion = makeSeleccion();
+    const todos = makeTodos({
+      tareas: [makeTarea({ id: 't1' }), makeTarea({ id: 't2' })],
+      total: 2,
+    });
+    renderList(todos, makeFilters(), seleccion);
+
+    const selectAll = screen.getByRole('checkbox', { name: /seleccionar todas/i });
+    expect(selectAll).not.toBeChecked();
+
+    await user.click(selectAll);
+    expect(seleccion.toggleTodos).toHaveBeenCalledWith(['t1', 't2']);
+  });
+
+  it('the "select all" checkbox reflects a full selection and goes indeterminate for a partial one', () => {
+    const todos = makeTodos({
+      tareas: [makeTarea({ id: 't1' }), makeTarea({ id: 't2' })],
+      total: 2,
+    });
+
+    const { rerender } = render(
+      <TodoList
+        todos={todos}
+        filters={makeFilters()}
+        seleccion={makeSeleccion({ count: 1, seleccionados: new Set(['t1']) })}
+        categorias={[]}
+        etiquetas={[]}
+      />,
+    );
+    let selectAll = screen.getByRole('checkbox', { name: /seleccionar todas/i });
+    expect(selectAll).not.toBeChecked();
+    expect(selectAll).toHaveProperty('indeterminate', true);
+
+    rerender(
+      <TodoList
+        todos={todos}
+        filters={makeFilters()}
+        seleccion={makeSeleccion({ count: 2, seleccionados: new Set(['t1', 't2']) })}
+        categorias={[]}
+        etiquetas={[]}
+      />,
+    );
+    selectAll = screen.getByRole('checkbox', { name: /deseleccionar todas/i });
+    expect(selectAll).toBeChecked();
+    expect(selectAll).toHaveProperty('indeterminate', false);
   });
 });

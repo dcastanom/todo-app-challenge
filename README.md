@@ -133,7 +133,7 @@ Guía detallada: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 - [x] **Fase 5** — Categorías & Etiquetas: CRUD, relación M:M, `TareaDTO` embebido.
 - [x] **Fase 6** — Filtrado multidimensional: 8 filtros + búsqueda de texto (`pg_trgm`), caché Redis por usuario.
 - [x] **Fase 7** — Testing completo: gate de cobertura ≥80% en CI (jobs `verify` / `integration` / `e2e`).
-- [x] **Fase 8** — Infraestructura (Docker prod, CI/CD con publicación de imágenes, observabilidad), **features bonus** (drag & drop, dark mode, export CSV/JSON, atajos de teclado, operaciones en lote, modo offline) y documentación (Swagger, seguridad, release v1.0.0).
+- [x] **Fase 8** — Infraestructura (Docker prod, CI/CD con publicación de imágenes, observabilidad), **features bonus** (drag & drop, dark mode, export CSV/JSON, atajos de teclado, operaciones en lote, modo offline, dashboard de estadísticas, actualizaciones en tiempo real vía Socket.IO) y documentación (Swagger, seguridad, release v1.0.0).
 
 Documentación de arquitectura y plan: `CLAUDE.md`, `ARQUITECTURA.md`, `PLANIFICACION.md`, `PLAN_COMMITS.md`.
 Auditoría de seguridad: [`docs/SECURITY.md`](docs/SECURITY.md) · Cambios: [`CHANGELOG.md`](CHANGELOG.md).

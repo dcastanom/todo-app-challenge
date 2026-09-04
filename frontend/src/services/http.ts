@@ -5,6 +5,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { ApiError, ApiResponse, AuthResponse } from '@todo/shared';
+import { connect, getClientId } from './socket.service.js';
 import { tokenStorage } from './token-storage.js';
 
 /** Fired when a refresh attempt fails — AuthContext listens and logs out. */
@@ -70,6 +71,9 @@ export class AxiosHttpClient implements HttpClient {
     this.axios.interceptors.request.use((config) => {
       const token = tokenStorage.getAccess();
       if (token) config.headers.Authorization = `Bearer ${token}`;
+      // Lets the backend exclude this tab from its own realtime broadcast.
+      const socketId = getClientId();
+      if (socketId) config.headers['X-Client-Id'] = socketId;
       return config;
     });
 
@@ -104,6 +108,9 @@ export class AxiosHttpClient implements HttpClient {
           { refreshToken },
         );
         tokenStorage.save(data.data.tokens);
+        // Re-arm the realtime socket with the rotated token for its next
+        // reconnect (the current connection stays up either way).
+        connect(data.data.tokens.accessToken);
         return data.data.tokens.accessToken;
       } catch {
         tokenStorage.clear();

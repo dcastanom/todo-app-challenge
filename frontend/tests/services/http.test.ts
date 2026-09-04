@@ -3,6 +3,11 @@ import type * as Axios from 'axios';
 import { HttpError } from '../../src/services/http.js';
 import { tokenStorage } from '../../src/services/token-storage.js';
 
+// Keeps this suite hermetic — without this, a successful refresh would spin
+// up a real socket.io-client connection attempt as a side effect.
+const socketService = vi.hoisted(() => ({ connect: vi.fn(), getClientId: vi.fn() }));
+vi.mock('../../src/services/socket.service.js', () => socketService);
+
 type Fn = ReturnType<typeof vi.fn>;
 type RequestHandler = (config: { headers: AxiosHeaders }) => { headers: AxiosHeaders };
 type ErrorHandler = (error: unknown) => Promise<unknown>;
@@ -66,6 +71,7 @@ function axiosError(status: number, code: string, config: object = {}): AxiosErr
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  socketService.getClientId.mockReturnValue(undefined);
 });
 
 describe('AxiosHttpClient', () => {
@@ -122,6 +128,17 @@ describe('AxiosHttpClient', () => {
     expect(cfg?.headers.Authorization).toBe('Bearer tok');
   });
 
+  it('attaches X-Client-Id when the realtime socket is connected, omits it otherwise', () => {
+    new AxiosHttpClient('/api/v1');
+
+    let cfg = inst().interceptors.request.handler?.({ headers: new AxiosHeaders() });
+    expect(cfg?.headers['X-Client-Id']).toBeUndefined();
+
+    socketService.getClientId.mockReturnValue('socket-42');
+    cfg = inst().interceptors.request.handler?.({ headers: new AxiosHeaders() });
+    expect(cfg?.headers['X-Client-Id']).toBe('socket-42');
+  });
+
   it('refreshes once on a 401 and retries the original request', async () => {
     tokenStorage.save({ accessToken: 'old', refreshToken: 'refresh-1' });
     hoisted.post.mockResolvedValue({
@@ -139,6 +156,8 @@ describe('AxiosHttpClient', () => {
     });
     expect(tokenStorage.getAccess()).toBe('new');
     expect(result).toEqual({ data: { retried: true } });
+    // Re-arms the realtime socket with the rotated token for its next reconnect.
+    expect(socketService.connect).toHaveBeenCalledWith('new');
   });
 
   it('clears the session and rejects when refresh fails', async () => {

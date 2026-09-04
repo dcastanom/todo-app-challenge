@@ -1,0 +1,71 @@
+.page {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ventana {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.seccion {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.seccion h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .stats > * {
+    flex: 1 1 9rem;
+  }
+}

@@ -236,7 +236,7 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
 - [x] **US-095: Drag & Drop Reordenar**
   - AC: ~~React-beautiful-dnd~~ → HTML5 Drag & Drop nativo (sin dependencia; RBD está sin mantenimiento)
   - AC: Persist order a BD → `PATCH /api/v1/tareas/reorder` + columna `posicion` + índice `(usuario_id, posicion)`
-  - AC: Smooth UX → reordenamiento optimista con revert en error, orden "Manual (arrastrar)"
+  - AC: Smooth UX → reordenamiento optimista con revert en error; funciona desde cualquier orden (no solo "Manual (arrastrar)"), y al soltar cambia el orden activo a manual para no perder el cambio en el siguiente refetch
   - DoD: Feature + tests (`moverItem`, `useTodos.mover`, integración endpoint, E2E) ✅
 
 - [x] **US-096: Dark Mode Toggle**
@@ -251,12 +251,12 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
   - DoD: Feature + tests (serializador CSV, `serializeExport`, integración, `ExportMenu`, E2E descarga) ✅
 
 - [x] **US-098: Atajos de Teclado**
-  - AC: ⌘/Ctrl+K (buscar), ⌘/Ctrl+N (nueva), ⌘/Ctrl+D (tema), ? (ayuda), Esc (cerrar)
+  - AC: ⌘/Ctrl+K (buscar), N (nueva — Ctrl/Cmd+N está reservado por el navegador para "nueva ventana" a nivel de shell, no interceptable con `preventDefault`), ⌘/Ctrl+D (tema), ? (ayuda), Esc (cerrar)
   - AC: Help modal (`ShortcutsHelpModal`)
   - DoD: Feature + tests (`useKeyboardShortcuts`, modal, E2E) ✅
 
 - [x] **US-099: Batch Operations**
-  - AC: Select múltiples (`useSeleccion`, modo selección en `TodoList`)
+  - AC: Select múltiples (`useSeleccion`) — checkbox de selección por tarea siempre visible (sin modo/botón intermedio) + checkbox "Seleccionar todas" (con estado indeterminado) en la toolbar
   - AC: Batch actions: completar / prioridad / mover categoría / eliminar
   - AC: `PATCH /api/v1/tareas/batch` (discriminated union, ownership-checked)
   - DoD: Feature + tests (`useSeleccion`, `BatchActionBar`, integración, E2E) ✅
@@ -266,6 +266,18 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
   - AC: Sync cuando online → el borrador persiste; se reenvía al reconectar
   - AC: Offline indicator (`OfflineIndicator` + `useOnlineStatus`)
   - DoD: Feature + tests (`useOnlineStatus`, `useFormDraft`, `OfflineIndicator`) ✅
+
+- [x] **US-125: Dashboard de Estadísticas**
+  - AC: `GET /api/v1/estadisticas?dias=` — totales, tasa de completado, desglose por prioridad/categoría y actividad diaria (todo escopado al usuario, cacheado bajo el mismo namespace/versión que `tareas`)
+  - AC: `EstadisticasPage` (`/estadisticas`) — tarjetas de stats, barras por prioridad/categoría, gráfico de actividad; sin dependencia de charts, CSS Modules puro
+  - AC: Se actualiza sola ante cualquier evento realtime de tareas/categorías (US-126)
+  - DoD: Feature + tests (`estadisticas.repository`/`.service` integration, `useEstadisticas`, `StatCard`/`BarraLista`/`ActividadChart`, E2E) ✅
+
+- [x] **US-126: Actualizaciones en Tiempo Real (WebSockets)**
+  - AC: Socket.IO server (`backend/src/realtime/`) montado sobre el mismo `http.Server`; autenticado con el JWT de acceso (mismo `verifyAccessToken` + blacklist que `requireAuth`), cada socket se une a su room privado `usuario:<id>`
+  - AC: Toda mutación de tareas/categorías/etiquetas emite al room del usuario (`tarea:creada/actualizada/eliminada`, `tareas:reordenadas`, `tareas:cambio-masivo`, `categorias:cambiaron`, `etiquetas:cambiaron`) — sincroniza otras pestañas/dispositivos del mismo usuario, nunca entre usuarios distintos
+  - AC: La pestaña que originó el cambio no recibe su propio eco (`X-Client-Id` = `socket.id`, `io.to(room).except(clientId)`)
+  - DoD: Feature + tests (`emitter`, socket-server integration con `socket.io-client` real sobre HTTP real, `useTodos`/`useCrudColeccion`/`useEstadisticas` realtime, E2E multi-pestaña) ✅
 
 ### Polish & Documentation
 
