@@ -53,8 +53,9 @@ docker compose -f docker-compose.prod.yml -f docker-compose.observability.yml up
 ```
 
 - **Prometheus** (`:9090`) — scrapea `backend:4000/metrics` cada 15 s.
-- **Grafana** (`:3001`, admin/admin) — datasource y dashboard "Todo Backend" provisionados desde `observability/grafana/`.
+- **Grafana** (`:3001`, admin/admin) — datasources (Prometheus, Jaeger, Loki) y dashboard "Todo Backend" provisionados desde `observability/grafana/`, con métricas, un link a trazas y un panel de logs en vivo.
 - **Jaeger** (`:16686`) — recibe trazas OTLP; el override fija `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318`.
+- **Loki + Promtail** (`:3101` en el host) — Promtail tailea el stdout de todos los contenedores vía el socket de Docker (sin logging-driver que instalar) y lo manda a Loki; Grafana lo consulta. Los logs de `backend` son JSON de Pino, así que quedan filtrables por `level` sin reparsear cada línea (ver `observability/promtail-config.yml`).
 
 ## Health checks
 

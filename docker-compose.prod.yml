@@ -3,6 +3,13 @@
 #
 # Reads the same .env as local dev. Override POSTGRES_*, JWT_* and CORS_ORIGIN
 # for a real deployment.
+#
+# `name:` pins its own Compose project ("todo-prod"), distinct from the dev
+# docker-compose.yml's default project — both define services called
+# `postgres`/`redis`, and without separate projects `docker compose down`
+# here would match and remove the dev containers too (same project + same
+# service name = same resource, regardless of which file created it).
+name: todo-prod
 services:
   postgres:
     image: postgres:16-alpine
