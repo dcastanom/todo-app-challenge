@@ -8,9 +8,12 @@ import type {
   TareaDTO,
 } from '@todo/shared';
 import type { UseFilters } from '../../hooks/useFilters.js';
+import { useSeleccion, type UseSeleccion } from '../../hooks/useSeleccion.js';
 import type { UseTodos } from '../../hooks/useTodos.js';
 import { ErrorMessage } from '../common/ErrorMessage.js';
 import { Spinner } from '../common/Spinner.js';
+import { BatchActionBar } from './BatchActionBar.js';
+import { ExportMenu } from './ExportMenu.js';
 import { FilterPanel } from './FilterPanel.js';
 import { Pagination } from './Pagination.js';
 import { SearchBar } from './SearchBar.js';
@@ -19,6 +22,7 @@ import { TodoItem } from './TodoItem.js';
 import styles from './TodoList.module.css';
 
 const SORTS: { label: string; orden: CampoOrden; direccion: DireccionOrden }[] = [
+  { label: 'Manual (arrastrar)', orden: 'posicion', direccion: 'asc' },
   { label: 'Más recientes', orden: 'created_at', direccion: 'desc' },
   { label: 'Más antiguas', orden: 'created_at', direccion: 'asc' },
   { label: 'Prioridad', orden: 'prioridad', direccion: 'desc' },
@@ -33,6 +37,11 @@ export interface TodoListProps {
   filters: UseFilters;
   categorias: CategoriaDTO[];
   etiquetas: EtiquetaDTO[];
+  /** Share selection state with the parent; omitted → the list owns it. */
+  seleccion?: UseSeleccion;
+  /** Bumped by the parent (⌘N) to pop the new-task form open. */
+  nuevaSignal?: number;
+  searchInputRef?: React.RefObject<HTMLInputElement> | undefined;
 }
 
 export function TodoList({
@@ -40,10 +49,25 @@ export function TodoList({
   filters,
   categorias,
   etiquetas,
+  seleccion: seleccionProp,
+  nuevaSignal = 0,
+  searchInputRef,
 }: TodoListProps): React.JSX.Element {
+  const seleccionLocal = useSeleccion();
+  const seleccion = seleccionProp ?? seleccionLocal;
   const [editing, setEditing] = useState<Editing>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [seleccionando, setSeleccionando] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [lastSignal, setLastSignal] = useState(0);
 
+  if (nuevaSignal !== lastSignal) {
+    setLastSignal(nuevaSignal);
+    setEditing('new');
+  }
+
+  const manual = todos.orden === 'posicion';
   const sortIndex = SORTS.findIndex(
     (s) => s.orden === todos.orden && s.direccion === todos.direccion,
   );
@@ -54,10 +78,26 @@ export function TodoList({
     setEditing(null);
   };
 
+  const commitDrag = (): void => {
+    if (dragIndex !== null && overIndex !== null && dragIndex !== overIndex) {
+      void todos.mover(dragIndex, overIndex);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const toggleSeleccionMode = (): void => {
+    setSeleccionando((v) => {
+      if (v) seleccion.clear();
+      return !v;
+    });
+  };
+
   return (
     <section className={styles.wrapper}>
       <div className={styles.toolbar}>
         <SearchBar
+          inputRef={searchInputRef}
           value={filters.filtros.busqueda ?? ''}
           onChange={(q) => filters.set('busqueda', q || undefined)}
         />
@@ -68,6 +108,14 @@ export function TodoList({
           aria-expanded={showFilters}
         >
           Filtros{filters.activos > 0 ? ` (${filters.activos})` : ''}
+        </button>
+        <button
+          type="button"
+          className={seleccionando ? styles.filterOn : styles.filter}
+          onClick={toggleSeleccionMode}
+          aria-pressed={seleccionando}
+        >
+          Seleccionar
         </button>
         <button
           type="button"
@@ -100,6 +148,7 @@ export function TodoList({
             ))}
           </select>
         </label>
+        <ExportMenu filtros={filters.filtros} />
         <span className={styles.count}>{todos.total} tareas</span>
       </div>
 
@@ -127,16 +176,35 @@ export function TodoList({
         </p>
       ) : (
         <ul className={styles.list}>
-          {todos.tareas.map((tarea) => (
+          {todos.tareas.map((tarea, index) => (
             <TodoItem
               key={tarea.id}
               tarea={tarea}
               onToggle={(id) => void todos.toggleCompletada(id)}
               onEdit={(t) => setEditing(t)}
               onDelete={(id) => void todos.eliminar(id)}
+              {...(seleccionando && {
+                selection: {
+                  selected: seleccion.isSelected(tarea.id),
+                  onToggle: seleccion.toggle,
+                },
+              })}
+              {...(manual &&
+                !seleccionando && {
+                  drag: {
+                    onDragStart: () => setDragIndex(index),
+                    onDragEnter: () => setOverIndex(index),
+                    onDragEnd: commitDrag,
+                    dragging: dragIndex === index,
+                  },
+                })}
             />
           ))}
         </ul>
+      )}
+
+      {manual && !seleccionando && todos.tareas.length > 1 && (
+        <p className={styles.hint}>Arrastra las tareas para cambiar su orden.</p>
       )}
 
       <Pagination
@@ -145,6 +213,15 @@ export function TodoList({
         total={todos.total}
         onPageChange={todos.setPage}
       />
+
+      {seleccionando && seleccion.count > 0 && (
+        <BatchActionBar
+          ids={[...seleccion.seleccionados]}
+          categorias={categorias}
+          onBatch={todos.batch}
+          onClear={seleccion.clear}
+        />
+      )}
     </section>
   );
 }

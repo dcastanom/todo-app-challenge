@@ -1,12 +1,25 @@
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { UseSeleccion } from '../../../src/hooks/useSeleccion.js';
 import type { UseTodos } from '../../../src/hooks/useTodos.js';
 import type { UseFilters } from '../../../src/hooks/useFilters.js';
 import { TodoList } from '../../../src/components/tareas/TodoList.js';
-import { makeFilters, makeTarea, makeTodos } from '../../factories.js';
+import { makeFilters, makeSeleccion, makeTarea, makeTodos } from '../../factories.js';
 
-function renderList(todos: UseTodos, filters: UseFilters = makeFilters()) {
-  render(<TodoList todos={todos} filters={filters} categorias={[]} etiquetas={[]} />);
+function renderList(
+  todos: UseTodos,
+  filters: UseFilters = makeFilters(),
+  seleccion: UseSeleccion = makeSeleccion(),
+) {
+  render(
+    <TodoList
+      todos={todos}
+      filters={filters}
+      seleccion={seleccion}
+      categorias={[]}
+      etiquetas={[]}
+    />,
+  );
 }
 
 describe('<TodoList />', () => {
@@ -60,5 +73,36 @@ describe('<TodoList />', () => {
 
     await user.selectOptions(screen.getByLabelText(/ordenar por/i), 'Prioridad');
     expect(todos.setSort).toHaveBeenCalledWith('prioridad', 'desc');
+  });
+
+  it('persists a drag reorder when sorting manually', () => {
+    const todos = makeTodos({
+      orden: 'posicion',
+      direccion: 'asc',
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    const [first, second] = screen.getAllByRole('listitem');
+    fireEvent.dragStart(first!);
+    fireEvent.dragEnter(second!);
+    fireEvent.dragEnd(first!);
+
+    expect(todos.mover).toHaveBeenCalledWith(0, 1);
+  });
+
+  it('reveals the batch bar once tasks are selected', async () => {
+    const user = userEvent.setup();
+    const seleccion = makeSeleccion({ count: 2, seleccionados: new Set(['t1', 't2']) });
+    renderList(
+      makeTodos({ tareas: [makeTarea({ id: 't1' })], total: 1 }),
+      makeFilters(),
+      seleccion,
+    );
+
+    expect(screen.queryByText('2 seleccionadas')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /seleccionar/i }));
+    expect(screen.getByText('2 seleccionadas')).toBeInTheDocument();
   });
 });

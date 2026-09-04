@@ -15,12 +15,20 @@ export const SESSION_EXPIRED_EVENT = 'todo:session-expired';
  * directly. Swapping the transport is a one-file change and services stay
  * testable with a fake implementation.
  */
+/** A response where the caller needs the headers/body envelope (e.g. file downloads). */
+export interface RawResponse<T> {
+  data: T;
+  headers: Record<string, unknown>;
+}
+
 export interface HttpClient {
   get<T>(url: string, config?: AxiosRequestConfig): Promise<T>;
   post<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T>;
   put<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T>;
   patch<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T>;
   delete<T>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  /** GET that resolves to the full `{ data, headers }` — used for downloads. */
+  getRaw<T>(url: string, config?: AxiosRequestConfig): Promise<RawResponse<T>>;
 }
 
 export class HttpError extends Error {
@@ -119,6 +127,15 @@ export class AxiosHttpClient implements HttpClient {
 
   get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     return this.request<T>({ ...config, method: 'GET', url });
+  }
+  async getRaw<T>(url: string, config?: AxiosRequestConfig): Promise<RawResponse<T>> {
+    try {
+      const response = await this.axios.request<T>({ ...config, method: 'GET', url });
+      const headers: Record<string, unknown> = { ...response.headers };
+      return { data: response.data, headers };
+    } catch (error) {
+      throw error instanceof HttpError ? error : toHttpError(error);
+    }
   }
   post<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return this.request<T>({ ...config, method: 'POST', url, data: body });

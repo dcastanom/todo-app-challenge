@@ -75,6 +75,23 @@ describe('AxiosHttpClient', () => {
     await expect(client.get('/x')).resolves.toEqual({ ok: 1 });
   });
 
+  it('getRaw resolves with data and headers', async () => {
+    const client = new AxiosHttpClient('/api/v1');
+    inst().request.mockResolvedValue({
+      data: new Blob(['x']),
+      headers: { 'content-disposition': 'attachment; filename="f.csv"' },
+    });
+    const res = await client.getRaw<Blob>('/tareas/export');
+    expect(res.data).toBeInstanceOf(Blob);
+    expect(res.headers['content-disposition']).toContain('f.csv');
+  });
+
+  it('getRaw maps errors to HttpError', async () => {
+    const client = new AxiosHttpClient('/api/v1');
+    inst().request.mockRejectedValue(axiosError(500, 'INTERNAL_ERROR'));
+    await expect(client.getRaw('/x')).rejects.toBeInstanceOf(HttpError);
+  });
+
   it('maps an error response to HttpError with the body code', async () => {
     const client = new AxiosHttpClient('/api/v1');
     inst().request.mockRejectedValue(axiosError(422, 'VALIDATION_ERROR'));

@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { TareaDTO } from '@todo/shared';
 import { TodoItem } from '../../../src/components/tareas/TodoItem.js';
 import { makeTarea } from '../../factories.js';
@@ -55,5 +55,47 @@ describe('<TodoItem />', () => {
   it('does not flag a completed task as overdue', () => {
     setup(makeTarea({ completada: true, fechaVencimiento: '2020-01-01T00:00:00.000Z' }));
     expect(screen.queryByText(/venció/i)).not.toBeInTheDocument();
+  });
+
+  it('renders a selection checkbox and reports toggles', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <TodoItem
+        tarea={makeTarea({ id: 't1', titulo: 'Elegir' })}
+        onToggle={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        selection={{ selected: false, onToggle: onSelect }}
+      />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: /seleccionar "elegir"/i }));
+    expect(onSelect).toHaveBeenCalledWith('t1');
+  });
+
+  it('becomes draggable and wires the drag callbacks', () => {
+    const drag = {
+      onDragStart: vi.fn(),
+      onDragEnter: vi.fn(),
+      onDragEnd: vi.fn(),
+      dragging: false,
+    };
+    render(
+      <TodoItem
+        tarea={makeTarea({ titulo: 'Mover' })}
+        onToggle={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        drag={drag}
+      />,
+    );
+    const item = screen.getByRole('listitem');
+    expect(item).toHaveAttribute('draggable', 'true');
+    fireEvent.dragStart(item);
+    fireEvent.dragEnter(item);
+    fireEvent.dragEnd(item);
+    expect(drag.onDragStart).toHaveBeenCalled();
+    expect(drag.onDragEnter).toHaveBeenCalled();
+    expect(drag.onDragEnd).toHaveBeenCalled();
   });
 });

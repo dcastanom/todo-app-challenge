@@ -24,7 +24,7 @@
 .field > span {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #6b7883;
+  color: var(--color-text-muted);
 }
 
 .field select,
@@ -55,7 +55,7 @@
 .tagsLabel {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #6b7883;
+  color: var(--color-text-muted);
   margin-right: 0.2rem;
 }
 

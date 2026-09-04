@@ -24,5 +24,5 @@
 
 .status {
   font-size: 0.82rem;
-  color: #6b7883;
+  color: var(--color-text-muted);
 }

@@ -1,0 +1,50 @@
+.bar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+
+.bar button,
+.bar select {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.delete {
+  color: var(--color-danger);
+  border-color: var(--color-danger) !important;
+}
+
+.cancel {
+  margin-left: auto;
+  color: var(--color-text-muted);
+}

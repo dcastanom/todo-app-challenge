@@ -1,5 +1,6 @@
 import type { CategoriaDTO, EtiquetaDTO, PaginatedResponse, TareaDTO } from '@todo/shared';
 import type { UseFilters } from '../src/hooks/useFilters.js';
+import type { UseSeleccion } from '../src/hooks/useSeleccion.js';
 import type { UseTodos } from '../src/hooks/useTodos.js';
 
 export function makeTarea(over: Partial<TareaDTO> = {}): TareaDTO {
@@ -59,6 +60,18 @@ export function makeFilters(over: Partial<UseFilters> = {}): UseFilters {
   };
 }
 
+export function makeSeleccion(over: Partial<UseSeleccion> = {}): UseSeleccion {
+  return {
+    seleccionados: new Set<string>(),
+    count: 0,
+    isSelected: vi.fn().mockReturnValue(false),
+    toggle: vi.fn(),
+    toggleTodos: vi.fn(),
+    clear: vi.fn(),
+    ...over,
+  };
+}
+
 export function makeTodos(over: Partial<UseTodos> = {}): UseTodos {
   return {
     tareas: [],
@@ -77,6 +90,8 @@ export function makeTodos(over: Partial<UseTodos> = {}): UseTodos {
     actualizar: vi.fn().mockResolvedValue(undefined),
     eliminar: vi.fn().mockResolvedValue(undefined),
     toggleCompletada: vi.fn().mockResolvedValue(undefined),
+    mover: vi.fn().mockResolvedValue(undefined),
+    batch: vi.fn().mockResolvedValue(undefined),
     ...over,
   };
 }

@@ -5,10 +5,16 @@ export interface SearchBarProps {
   value: string;
   onChange: (query: string) => void;
   delay?: number;
+  inputRef?: React.RefObject<HTMLInputElement> | undefined;
 }
 
 /** Debounced search box. Emits `onChange` `delay` ms after the last keystroke. */
-export function SearchBar({ value, onChange, delay = 300 }: SearchBarProps): React.JSX.Element {
+export function SearchBar({
+  value,
+  onChange,
+  delay = 300,
+  inputRef,
+}: SearchBarProps): React.JSX.Element {
   const [local, setLocal] = useState(value);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -27,6 +33,7 @@ export function SearchBar({ value, onChange, delay = 300 }: SearchBarProps): Rea
   return (
     <div className={styles.wrap}>
       <input
+        ref={inputRef}
         type="search"
         className={styles.input}
         placeholder="Buscar tareas…"

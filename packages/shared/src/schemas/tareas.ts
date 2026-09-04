@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CAMPOS_ORDEN, DIRECCIONES_ORDEN, PRIORIDADES } from '../constants.js';
+import { CAMPOS_ORDEN, DIRECCIONES_ORDEN, FORMATOS_EXPORT, PRIORIDADES } from '../constants.js';
 import { paginationQuerySchema } from './common.js';
 
 /** Accepts an ISO string or `null`; empty string → null. */
@@ -71,9 +71,45 @@ export const listarTareasQuerySchema = paginationQuerySchema.extend({
   busqueda: z.string().trim().min(1).max(120).optional(),
 });
 
+/** `PATCH /api/v1/tareas/reorder` — the full ordered id list for manual sort. */
+export const reordenarTareasSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+});
+
+/** `PATCH /api/v1/tareas/batch` — apply one action to many tasks. */
+export const batchTareasSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(200),
+  accion: z.discriminatedUnion('tipo', [
+    z.object({ tipo: z.literal('completar'), completada: z.boolean() }),
+    z.object({ tipo: z.literal('prioridad'), prioridad: z.enum(PRIORIDADES) }),
+    z.object({
+      tipo: z.literal('categoria'),
+      categoriaId: z
+        .string()
+        .uuid()
+        .nullish()
+        .transform((v) => v ?? null),
+    }),
+    z.object({ tipo: z.literal('eliminar') }),
+  ]),
+});
+
+/** `GET /api/v1/tareas/export` — every list filter, no pagination, + format. */
+export const exportTareasQuerySchema = listarTareasQuerySchema
+  .omit({ page: true, limit: true })
+  .extend({ formato: z.enum(FORMATOS_EXPORT).default('csv') });
+
 export type CrearTareaInput = z.infer<typeof crearTareaSchema>;
 export type ActualizarTareaInput = z.infer<typeof actualizarTareaSchema>;
 export type CompletarTareaInput = z.infer<typeof completarTareaSchema>;
 export type ListarTareasQuery = z.infer<typeof listarTareasQuerySchema>;
+export type ReordenarTareasInput = z.infer<typeof reordenarTareasSchema>;
+export type BatchTareasInput = z.infer<typeof batchTareasSchema>;
+export type ExportTareasQuery = z.infer<typeof exportTareasQuerySchema>;
 /** The filter-only slice, used by the frontend FilterPanel/useFilters. */
 export type TareaFiltros = Omit<ListarTareasQuery, 'page' | 'limit' | 'orden' | 'direccion'>;
+
+/** `PATCH /api/v1/tareas/batch` response payload. */
+export interface BatchResultado {
+  afectadas: number;
+}
