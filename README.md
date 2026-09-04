@@ -98,7 +98,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.observability.yml up
 # Grafana → http://localhost:3001 (admin/admin)   Jaeger → http://localhost:16686
 ```
 
-Guía detallada: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+Guía detallada: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) · paso a paso para AWS (EC2, desde cero): [`docs/DEPLOYMENT-AWS.md`](docs/DEPLOYMENT-AWS.md).
 
 ## Observabilidad
 

@@ -1,5 +1,8 @@
 # Despliegue
 
+Genérico, para cualquier host con Docker. Para levantar una instancia real en AWS desde
+cero (EC2, Security Group, Elastic IP, TLS), ver [`DEPLOYMENT-AWS.md`](DEPLOYMENT-AWS.md).
+
 ## Imágenes
 
 Dos imágenes, ambas construidas desde la raíz del repo:
