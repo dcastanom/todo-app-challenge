@@ -27,16 +27,12 @@
   line-height: 1;
 }
 
-.check,
 .select {
   margin-top: 0.2rem;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
   cursor: pointer;
-}
-
-.select {
   accent-color: var(--color-primary);
 }
 
@@ -123,4 +119,13 @@
 .actions .delete {
   color: var(--color-danger);
   border-color: var(--color-danger);
+}
+
+.actions .complete {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.actions .undo {
+  color: var(--color-text-muted);
 }

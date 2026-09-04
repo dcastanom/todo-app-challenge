@@ -72,14 +72,6 @@ export function TodoItem({
         />
       )}
 
-      <input
-        type="checkbox"
-        className={styles.check}
-        checked={tarea.completada}
-        onChange={() => onToggle(tarea.id)}
-        aria-label={`Marcar "${tarea.titulo}" como ${tarea.completada ? 'pendiente' : 'completada'}`}
-      />
-
       <div className={styles.body}>
         <p className={styles.title}>{tarea.titulo}</p>
         {tarea.descripcion && <p className={styles.desc}>{tarea.descripcion}</p>}
@@ -115,6 +107,14 @@ export function TodoItem({
       </div>
 
       <div className={styles.actions}>
+        <button
+          type="button"
+          className={tarea.completada ? styles.undo : styles.complete}
+          onClick={() => onToggle(tarea.id)}
+          aria-label={`Marcar "${tarea.titulo}" como ${tarea.completada ? 'pendiente' : 'completada'}`}
+        >
+          {tarea.completada ? 'Marcar pendiente' : 'Completar'}
+        </button>
         <button type="button" onClick={() => onEdit(tarea)} aria-label={`Editar ${tarea.titulo}`}>
           Editar
         </button>

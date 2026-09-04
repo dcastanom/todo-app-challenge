@@ -83,10 +83,11 @@ export function makeFilters(over: Partial<UseFilters> = {}): UseFilters {
 }
 
 export function makeSeleccion(over: Partial<UseSeleccion> = {}): UseSeleccion {
+  const seleccionados = over.seleccionados ?? new Set<string>();
   return {
-    seleccionados: new Set<string>(),
-    count: 0,
-    isSelected: vi.fn().mockReturnValue(false),
+    seleccionados,
+    count: seleccionados.size,
+    isSelected: vi.fn((id: string) => seleccionados.has(id)),
     toggle: vi.fn(),
     toggleTodos: vi.fn(),
     clear: vi.fn(),
