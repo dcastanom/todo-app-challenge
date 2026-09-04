@@ -16,6 +16,7 @@ function mockHttp(): HttpClient & MockHttp {
     put: vi.fn(noBody),
     patch: vi.fn(noBody),
     delete: vi.fn(noBody),
+    getRaw: vi.fn(() => Promise.resolve({ data: new Blob(['x']), headers: {} })),
   } as unknown as HttpClient & MockHttp;
 }
 
@@ -74,6 +75,33 @@ describe('resource API clients hit the right endpoints', () => {
     expect(http.get).toHaveBeenCalledWith('/tareas/t1');
     expect(http.patch).toHaveBeenCalledWith('/tareas/t1/completar', { completada: undefined });
     expect(http.delete).toHaveBeenCalledWith('/tareas/t1');
+  });
+
+  it('TareasApi — reorder, batch and export', async () => {
+    const http = mockHttp();
+    http.patch.mockResolvedValue({ data: { afectadas: 2 } });
+    http.getRaw.mockResolvedValue({
+      data: new Blob(['id\n1']),
+      headers: { 'content-disposition': 'attachment; filename="tareas-2026-01-01.csv"' },
+    });
+    const api = new TareasApi(http);
+
+    await api.reorder(['b', 'a']);
+    expect(http.patch).toHaveBeenCalledWith('/tareas/reorder', { ids: ['b', 'a'] });
+
+    const res = await api.batch({ ids: ['a'], accion: { tipo: 'eliminar' } });
+    expect(http.patch).toHaveBeenCalledWith('/tareas/batch', {
+      ids: ['a'],
+      accion: { tipo: 'eliminar' },
+    });
+    expect(res).toEqual({ afectadas: 2 });
+
+    const exp = await api.exportar('csv', { prioridad: 'alta' });
+    expect(http.getRaw).toHaveBeenCalledWith('/tareas/export', {
+      params: { prioridad: 'alta', formato: 'csv' },
+      responseType: 'blob',
+    });
+    expect(exp.filename).toBe('tareas-2026-01-01.csv');
   });
 
   it('CategoriasApi and EtiquetasApi', async () => {

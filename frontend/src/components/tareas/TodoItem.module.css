@@ -10,15 +10,34 @@
 
 .item[data-completed='true'] .title {
   text-decoration: line-through;
-  color: #8a97a3;
+  color: var(--color-text-muted);
 }
 
-.check {
+.item[data-dragging='true'] {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.handle {
+  margin-top: 0.15rem;
+  color: var(--color-text-muted);
+  cursor: grab;
+  user-select: none;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.check,
+.select {
   margin-top: 0.2rem;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
   cursor: pointer;
+}
+
+.select {
+  accent-color: var(--color-primary);
 }
 
 .body {
@@ -35,7 +54,7 @@
 .desc {
   margin: 0.2rem 0 0;
   font-size: 0.85rem;
-  color: #6b7883;
+  color: var(--color-text-muted);
   word-break: break-word;
 }
 
@@ -51,7 +70,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: #6b7883;
+  color: var(--color-text-muted);
 }
 
 .dot {
@@ -76,11 +95,11 @@
 }
 
 .due {
-  color: #6b7883;
+  color: var(--color-text-muted);
 }
 
 .overdue {
-  color: #c0392b;
+  color: var(--color-danger);
   font-weight: 600;
 }
 
@@ -102,6 +121,6 @@
 }
 
 .actions .delete {
-  color: #c0392b;
-  border-color: #f0c4bf;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }

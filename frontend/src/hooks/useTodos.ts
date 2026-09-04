@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer } from 'react';
 import type {
   ActualizarTareaInput,
+  BatchTareasInput,
   CampoOrden,
   CrearTareaInput,
   DireccionOrden,
@@ -8,6 +9,7 @@ import type {
   TareaFiltros,
 } from '@todo/shared';
 import { PAGINACION } from '@todo/shared';
+import { moverItem } from '../lib/reordenar.js';
 import { HttpError } from '../services/http.js';
 import { tareasApi } from '../services/tareas.service.js';
 
@@ -30,7 +32,8 @@ type Action =
   | { type: 'SET_PAGE'; page: number }
   | { type: 'SET_SORT'; orden: CampoOrden; direccion: DireccionOrden }
   | { type: 'UPSERT'; tarea: TareaDTO }
-  | { type: 'REMOVE'; id: string };
+  | { type: 'REMOVE'; id: string }
+  | { type: 'SET_TAREAS'; tareas: TareaDTO[] };
 
 const initialState: State = {
   tareas: [],
@@ -75,6 +78,8 @@ function reducer(state: State, action: Action): State {
         tareas: state.tareas.filter((t) => t.id !== action.id),
         total: state.total - 1,
       };
+    case 'SET_TAREAS':
+      return { ...state, tareas: action.tareas };
   }
 }
 
@@ -89,6 +94,10 @@ export interface UseTodos extends State {
   actualizar: (id: string, input: ActualizarTareaInput) => Promise<void>;
   eliminar: (id: string) => Promise<void>;
   toggleCompletada: (id: string) => Promise<void>;
+  /** Moves the visible task at `from` to `to` and persists the new order. */
+  mover: (from: number, to: number) => Promise<void>;
+  /** Applies a bulk action, then refetches the current page. */
+  batch: (input: BatchTareasInput) => Promise<void>;
 }
 
 export function useTodos(filtros: TareaFiltros = {}): UseTodos {
@@ -150,6 +159,34 @@ export function useTodos(filtros: TareaFiltros = {}): UseTodos {
     [load],
   );
 
+  const mover = useCallback(
+    async (from: number, to: number) => {
+      const previo = state.tareas;
+      const siguiente = moverItem(previo, from, to);
+      if (siguiente === previo) return;
+      dispatch({ type: 'SET_TAREAS', tareas: siguiente });
+      try {
+        await tareasApi.reorder(siguiente.map((t) => t.id));
+      } catch (err) {
+        dispatch({ type: 'SET_TAREAS', tareas: previo });
+        dispatch({ type: 'ERROR', message: msg(err, 'No se pudo reordenar') });
+      }
+    },
+    [state.tareas],
+  );
+
+  const batch = useCallback(
+    async (input: BatchTareasInput) => {
+      try {
+        await tareasApi.batch(input);
+        await load();
+      } catch (err) {
+        dispatch({ type: 'ERROR', message: msg(err, 'No se pudo aplicar la acción') });
+      }
+    },
+    [load],
+  );
+
   const toggleCompletada = useCallback(
     async (id: string) => {
       const current = state.tareas.find((t) => t.id === id);
@@ -178,5 +215,7 @@ export function useTodos(filtros: TareaFiltros = {}): UseTodos {
     actualizar,
     eliminar,
     toggleCompletada,
+    mover,
+    batch,
   };
 }

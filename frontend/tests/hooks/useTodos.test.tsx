@@ -8,6 +8,8 @@ const api = vi.hoisted(() => ({
   update: vi.fn(),
   setCompletada: vi.fn(),
   remove: vi.fn(),
+  reorder: vi.fn(),
+  batch: vi.fn(),
 }));
 vi.mock('../../src/services/tareas.service.js', () => ({ tareasApi: api }));
 
@@ -80,6 +82,57 @@ describe('useTodos', () => {
     });
 
     expect(api.remove).toHaveBeenCalledWith('a');
+  });
+
+  it('reorders optimistically and persists the new id order', async () => {
+    api.reorder.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useTodos());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.mover(0, 1);
+    });
+
+    expect(result.current.tareas.map((t) => t.id)).toEqual(['b', 'a']);
+    expect(api.reorder).toHaveBeenCalledWith(['b', 'a']);
+  });
+
+  it('reverts the order when the reorder request fails', async () => {
+    api.reorder.mockRejectedValue(new Error('boom'));
+    const { result } = renderHook(() => useTodos());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.mover(0, 1);
+    });
+
+    expect(result.current.tareas.map((t) => t.id)).toEqual(['a', 'b']);
+    expect(result.current.error).toMatch(/reordenar/i);
+  });
+
+  it('applies a batch action and refetches', async () => {
+    api.batch.mockResolvedValue({ afectadas: 2 });
+    const { result } = renderHook(() => useTodos());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    api.list.mockClear();
+
+    await act(async () => {
+      await result.current.batch({ ids: ['a', 'b'], accion: { tipo: 'eliminar' } });
+    });
+
+    expect(api.batch).toHaveBeenCalledWith({ ids: ['a', 'b'], accion: { tipo: 'eliminar' } });
+    expect(api.list).toHaveBeenCalled();
+  });
+
+  it('surfaces a batch failure as an error', async () => {
+    api.batch.mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => useTodos());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.batch({ ids: ['a'], accion: { tipo: 'completar', completada: true } });
+    });
+    expect(result.current.error).toMatch(/no se pudo aplicar/i);
   });
 
   it('passes filters to the API and resets to page 1 when they change', async () => {
