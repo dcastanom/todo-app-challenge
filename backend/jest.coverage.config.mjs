@@ -25,6 +25,7 @@ export default {
     '!src/db/seed/index.ts',
     '!src/modules/analytics/run.ts',
     '!src/config/logger.ts',
+    '!src/observability/tracing.ts',
   ],
   coverageReporters: ['text-summary', 'text', 'lcov'],
   coverageThreshold: {

@@ -7,6 +7,7 @@ import { API_PREFIX, type ApiError } from '@todo/shared';
 import { env, isTest } from './config/env.js';
 import { logger } from './config/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { metricsHandler, metricsMiddleware } from './observability/metrics.js';
 import { healthRouter } from './routes/health.route.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { tareasRouter } from './modules/tareas/tareas.routes.js';
@@ -33,6 +34,11 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(pinoHttp({ logger }));
+
+  if (env.METRICS_ENABLED) {
+    app.use(metricsMiddleware);
+    app.get('/metrics', metricsHandler);
+  }
 
   const rateLimitHandler: Options['handler'] = (_req, res) => {
     const body: ApiError = {
