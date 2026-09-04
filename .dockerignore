@@ -2,11 +2,14 @@
 **/dist
 **/build
 **/coverage
+**/.vite
+**/.turbo
+**/playwright-report
+**/test-results
+**/.cache
 **/.env
 **/.env.local
 **/*.log
 .git
 .github
-**/playwright-report
-**/test-results
 *.md
