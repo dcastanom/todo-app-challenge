@@ -214,22 +214,22 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
 
 ### Infrastructure (I1-I3)
 
-- [ ] **US-092: Docker Setup (I1)**
-  - AC: Dockerfile backend + frontend
-  - AC: docker-compose.yml
-  - DoD: Docker funcional
+- [x] **US-092: Docker Setup (I1)**
+  - AC: `backend/Dockerfile` (multi-stage, tini, migra+arranca) + `frontend/Dockerfile` (nginx)
+  - AC: `docker-compose.prod.yml` (imágenes construidas + Postgres/Redis)
+  - DoD: ambas imágenes construyen; el backend arranca contra Postgres/Redis (migra, `/health` 200) ✅
 
-- [ ] **US-093: CI/CD Pipeline (I2)**
-  - AC: GitHub Actions workflow
-  - AC: Lint, test, build, deploy stages
-  - DoD: Pipeline green
+- [x] **US-093: CI/CD Pipeline (I2)**
+  - AC: workflow de GitHub Actions
+  - AC: stages lint / test / build / **docker** (build en PR, push a GHCR en `main`) / **deploy** (gated, entorno `staging`)
+  - DoD: pipeline con jobs `verify` / `integration` / `e2e` / `docker` / `deploy` ✅
 
-- [ ] **US-094: Observability (I3)**
-  - AC: Pino logging
-  - AC: Prometheus metrics
-  - AC: Jaeger tracing
-  - AC: Grafana dashboards
-  - DoD: Stack funcional
+- [x] **US-094: Observability (I3)**
+  - AC: Pino logging (ya en Fase 0, con id de request vía `pino-http`)
+  - AC: Prometheus metrics → `GET /metrics` (colectores Node + histograma `http_request_duration_seconds`)
+  - AC: Jaeger tracing → OpenTelemetry (http+express+pg) por OTLP, activo con `OTEL_EXPORTER_OTLP_ENDPOINT`
+  - AC: Grafana dashboards → `observability/grafana/` (datasource + dashboard "Todo Backend" provisionados)
+  - DoD: `docker-compose.observability.yml` (Prometheus + Grafana + Jaeger) ✅
 
 ### Features Bonus (OBLIGATORIOS) 🎁
 
@@ -269,30 +269,30 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
 
 ### Polish & Documentation
 
-- [ ] **US-101: API Documentation (Swagger)**
-  - AC: OpenAPI spec
-  - AC: Swagger UI
-  - DoD: /api/docs working
+- [x] **US-101: API Documentation (Swagger)**
+  - AC: OpenAPI 3.1 spec (`backend/src/docs/openapi.ts`, `GET /api/v1/openapi.json`)
+  - AC: Swagger UI (`GET /api/v1/docs`, assets cdnjs, CSP relajado por ruta)
+  - DoD: `/api/docs` → 302 a `/api/v1/docs` ✅
 
-- [ ] **US-102: README & Setup Docs**
-  - AC: Setup local
-  - AC: Deployment
-  - AC: Troubleshooting
-  - DoD: README completo
+- [x] **US-102: README & Setup Docs**
+  - AC: Setup local (README + `docs/COMMANDS.md`)
+  - AC: Deployment (`docs/DEPLOYMENT.md` — imágenes, compose, env, health, rollback)
+  - AC: Troubleshooting (tabla en el README)
+  - DoD: README completo ✅
 
-- [ ] **US-103: QA Final & Security Audit**
-  - AC: Smoke tests
-  - AC: OWASP audit
-  - AC: Performance testing
-  - AC: Browser compat
-  - DoD: 0 critical bugs
+- [x] **US-103: QA Final & Security Audit**
+  - AC: Smoke tests → 4 E2E de features bonus + 14 E2E en total, gate de cobertura CI
+  - AC: OWASP audit → `docs/SECURITY.md` (Top 10 2021 mapeado al código)
+  - AC: Performance → índices verificados (`db:verify`), 10 queries BI < 1s, caché Redis, code-splitting
+  - AC: Browser compat → Playwright (Chromium); CSS con tokens y `prefers-color-scheme`
+  - DoD: 0 bugs críticos; `npm audit --omit=dev` limpio (4 moderate sólo en devDeps) ✅
 
-- [ ] **US-104: Release v1.0.0**
-  - AC: Version bumped
-  - AC: Docker tagged
-  - AC: Deployed
-  - AC: Monitoring active
-  - DoD: Production ready
+- [x] **US-104: Release v1.0.0**
+  - AC: Version bumped → todos los workspaces a `1.0.0`
+  - AC: Docker tagged → CI publica `ghcr.io/…-{backend,frontend}:{latest,<sha>}` en `main`
+  - AC: Deployed → job `deploy` gated al entorno `staging` (stub para el host concreto)
+  - AC: Monitoring active → `/metrics` + dashboard Grafana + `/health/ready`
+  - DoD: `CHANGELOG.md`, production ready ✅
 
 **Commits Fase 8:** 30-40
 

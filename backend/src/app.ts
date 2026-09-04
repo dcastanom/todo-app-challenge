@@ -6,7 +6,9 @@ import { pinoHttp } from 'pino-http';
 import { API_PREFIX, type ApiError } from '@todo/shared';
 import { env, isTest } from './config/env.js';
 import { logger } from './config/logger.js';
+import { docsRouter } from './docs/docs.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { metricsHandler, metricsMiddleware } from './observability/metrics.js';
 import { healthRouter } from './routes/health.route.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { tareasRouter } from './modules/tareas/tareas.routes.js';
@@ -33,6 +35,11 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(pinoHttp({ logger }));
+
+  if (env.METRICS_ENABLED) {
+    app.use(metricsMiddleware);
+    app.get('/metrics', metricsHandler);
+  }
 
   const rateLimitHandler: Options['handler'] = (_req, res) => {
     const body: ApiError = {
@@ -66,6 +73,10 @@ export function createApp(): Express {
 
   app.use('/health', healthRouter);
   app.use(`${API_PREFIX}/health`, healthRouter);
+
+  // API docs: Swagger UI at /api/v1/docs, spec at /api/v1/openapi.json.
+  app.use(API_PREFIX, docsRouter);
+  app.get('/api/docs', (_req, res) => res.redirect(`${API_PREFIX}/docs`));
   app.use(`${API_PREFIX}/auth/login`, authLimiter);
   app.use(`${API_PREFIX}/auth/register`, authLimiter);
   app.use(`${API_PREFIX}/auth`, authRouter);

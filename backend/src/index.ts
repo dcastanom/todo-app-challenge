@@ -1,8 +1,13 @@
-import { createApp } from './app.js';
-import { env } from './config/env.js';
-import { logger } from './config/logger.js';
-import { pool } from './db/client.js';
-import { closeRedis } from './config/redis.js';
+import { startTracing } from './observability/tracing.js';
+
+// Tracing must patch http/express/pg before they are imported.
+await startTracing();
+
+const { createApp } = await import('./app.js');
+const { env } = await import('./config/env.js');
+const { logger } = await import('./config/logger.js');
+const { pool } = await import('./db/client.js');
+const { closeRedis } = await import('./config/redis.js');
 
 const app = createApp();
 
