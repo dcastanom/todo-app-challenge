@@ -36,14 +36,15 @@ export class HttpError extends Error {
 }
 
 function toHttpError(error: unknown): HttpError {
+  if (error instanceof HttpError) return error;
   if (error instanceof AxiosError) {
     const status = error.response?.status ?? 0;
-    const body = error.response?.data as ApiError | undefined;
+    const body = error.response?.data as Partial<ApiError> | undefined;
     return new HttpError(
       status,
-      body?.error.code ?? 'NETWORK_ERROR',
-      body?.error.message ?? error.message,
-      body?.error.details,
+      body?.error?.code ?? 'NETWORK_ERROR',
+      body?.error?.message ?? error.message,
+      body?.error?.details,
     );
   }
   return new HttpError(0, 'UNKNOWN', error instanceof Error ? error.message : 'Error desconocido');

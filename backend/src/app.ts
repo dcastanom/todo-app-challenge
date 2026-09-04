@@ -1,9 +1,9 @@
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import { rateLimit } from 'express-rate-limit';
+import { rateLimit, type Options } from 'express-rate-limit';
 import { pinoHttp } from 'pino-http';
-import { API_PREFIX } from '@todo/shared';
+import { API_PREFIX, type ApiError } from '@todo/shared';
 import { env, isTest } from './config/env.js';
 import { logger } from './config/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
@@ -28,13 +28,23 @@ export function createApp(): Express {
   app.use(express.urlencoded({ extended: true }));
   app.use(pinoHttp({ logger }));
 
+  const rateLimitHandler: Options['handler'] = (_req, res) => {
+    const body: ApiError = {
+      error: { code: 'RATE_LIMIT', message: 'Demasiadas peticiones, inténtalo más tarde' },
+    };
+    res.status(429).json(body);
+  };
+  // Skipped under `test` (supertest + Playwright E2E).
+  const skipRateLimit = (): boolean => isTest;
+
   app.use(
     rateLimit({
       windowMs: env.RATE_LIMIT_WINDOW_MS,
       limit: env.RATE_LIMIT_MAX,
       standardHeaders: 'draft-7',
       legacyHeaders: false,
-      skip: () => isTest,
+      skip: skipRateLimit,
+      handler: rateLimitHandler,
     }),
   );
 
@@ -44,7 +54,8 @@ export function createApp(): Express {
     limit: 10,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: () => isTest,
+    skip: skipRateLimit,
+    handler: rateLimitHandler,
   });
 
   app.use('/health', healthRouter);

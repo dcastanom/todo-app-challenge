@@ -68,6 +68,53 @@ describe('etiquetas CRUD', () => {
       .expect(422);
   });
 
+  it('gets one tag by id and renames it', async () => {
+    const { token } = await registerUser(app);
+    const created = await request(app)
+      .post('/api/v1/etiquetas')
+      .set(...auth(token))
+      .send({ nombre: 'temporal' })
+      .expect(201);
+    const tag = (created.body as ApiResponse<EtiquetaDTO>).data;
+
+    await request(app)
+      .get(`/api/v1/etiquetas/${tag.id}`)
+      .set(...auth(token))
+      .expect(200)
+      .then((r) => expect((r.body as ApiResponse<EtiquetaDTO>).data.nombre).toBe('temporal'));
+
+    await request(app)
+      .put(`/api/v1/etiquetas/${tag.id}`)
+      .set(...auth(token))
+      .send({ nombre: 'definitiva' })
+      .expect(200)
+      .then((r) => expect((r.body as ApiResponse<EtiquetaDTO>).data.nombre).toBe('definitiva'));
+  });
+
+  it('409s renaming a tag onto an existing name; 404s on a missing tag', async () => {
+    const { token } = await registerUser(app);
+    await request(app)
+      .post('/api/v1/etiquetas')
+      .set(...auth(token))
+      .send({ nombre: 'uno' })
+      .expect(201);
+    const dos = await request(app)
+      .post('/api/v1/etiquetas')
+      .set(...auth(token))
+      .send({ nombre: 'dos' })
+      .expect(201);
+    await request(app)
+      .put(`/api/v1/etiquetas/${(dos.body as ApiResponse<EtiquetaDTO>).data.id}`)
+      .set(...auth(token))
+      .send({ nombre: 'uno' })
+      .expect(409);
+    await request(app)
+      .put('/api/v1/etiquetas/11111111-1111-1111-1111-111111111111')
+      .set(...auth(token))
+      .send({ nombre: 'x' })
+      .expect(404);
+  });
+
   it('isolates tags per user', async () => {
     const a = await registerUser(app);
     const b = await registerUser(app);

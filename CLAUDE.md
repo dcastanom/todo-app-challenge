@@ -60,13 +60,21 @@ npm run analytics --workspace backend -- --explain    # + EXPLAIN ANALYZE plans
 npm run lint | lint:fix
 npm run format | format:check
 npm run typecheck
-npm test                                   # unit only: backend Jest + frontend Vitest (no DB)
-npm test --workspace backend -- health      # single backend test by path/name
-npm run test:integration --workspace backend  # DB-backed suites (*.integration.test.ts)
-npm run test:coverage --workspace backend   # coverage (target >80%)
+npm test                                    # unit only: backend Jest + frontend Vitest (no DB)
+npm test --workspace backend -- health       # single backend test by path/name
+npm run test:integration --workspace backend  # DB-backed backend suites
+npm run test:coverage                        # backend (unit+integration) + frontend, ≥80% gate — needs services
+npm run test:e2e                             # Playwright (boots its own dev servers) — needs services
+npm run e2e:ui --workspace @todo/e2e         # Playwright interactive mode
 ```
 
-Tests split: `*.test.ts` = unit (no DB, runs in CI `verify` job); `*.integration.test.ts` = needs Postgres + Redis (CI `integration` job spins up service containers). Integration suites run **serially** (`maxWorkers: 1`) — they share one DB and clean up by `authtest-%` email prefix. Shared helpers: `backend/tests/helpers/api.ts`, `frontend/tests/factories.ts` + `test-utils.tsx`.
+**Testing (Fase 7)** — three layers:
+- **Unit** (`backend/tests/**/*.test.ts` except `*.integration`, `frontend/tests/**`): no DB, run by CI's `verify` job via `npm test`.
+- **Integration** (`backend/tests/**/*.integration.test.ts`): need Postgres + Redis, `maxWorkers: 1` (shared DB, `authtest-%` prefix cleanup). `npm run test:integration --workspace backend`.
+- **E2E** (`e2e/` workspace — Playwright, chromium): full browser flows (auth, CRUD, filtering). `npm run test:e2e`. Playwright boots the dev servers itself (`webServer`), backend with `NODE_ENV=test` (silent logs + rate limiter off). CI `e2e` job.
+- **Coverage gate ≥80%** (branches ≥75): `npm run test:coverage` runs backend `jest.coverage.config.mjs` (unit+integration in one pass, needs services) + frontend `vitest --coverage`. CI's `integration` job enforces it. `src/pages/**`, `logger.ts`, one-off scripts excluded.
+- Shared helpers: `backend/tests/helpers/api.ts`, `frontend/tests/{factories.ts,test-utils.tsx}`, `e2e/tests/helpers.ts`.
+- CI jobs: `verify` (lint/typecheck/unit/build, no services) · `integration` (pg+redis, migrate/seed/verify, coverage gate) · `e2e` (pg+redis, playwright).
 
 ---
 

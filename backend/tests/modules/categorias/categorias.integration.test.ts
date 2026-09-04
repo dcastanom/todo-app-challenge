@@ -85,6 +85,40 @@ describe('categorias CRUD', () => {
       .expect(422);
   });
 
+  it('gets one category by id and updates just its description', async () => {
+    const { token } = await registerUser(app);
+    const cat = await crear(token, { nombre: 'Estudio' });
+
+    await request(app)
+      .get(`/api/v1/categorias/${cat.id}`)
+      .set(...auth(token))
+      .expect(200)
+      .then((r) => expect((r.body as ApiResponse<CategoriaDTO>).data.nombre).toBe('Estudio'));
+
+    const upd = await request(app)
+      .put(`/api/v1/categorias/${cat.id}`)
+      .set(...auth(token))
+      .send({ descripcion: 'apuntes y repasos' })
+      .expect(200);
+    const data = (upd.body as ApiResponse<CategoriaDTO>).data;
+    expect(data.descripcion).toBe('apuntes y repasos');
+    expect(data.nombre).toBe('Estudio');
+  });
+
+  it('404s updating or deleting a non-existent category', async () => {
+    const { token } = await registerUser(app);
+    const fake = '11111111-1111-1111-1111-111111111111';
+    await request(app)
+      .put(`/api/v1/categorias/${fake}`)
+      .set(...auth(token))
+      .send({ nombre: 'x' })
+      .expect(404);
+    await request(app)
+      .delete(`/api/v1/categorias/${fake}`)
+      .set(...auth(token))
+      .expect(404);
+  });
+
   it('isolates categories per user', async () => {
     const a = await registerUser(app);
     const b = await registerUser(app);

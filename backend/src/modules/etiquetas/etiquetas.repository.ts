@@ -27,13 +27,6 @@ export class EtiquetasRepository {
     });
   }
 
-  async findManyByIds(usuarioId: string, ids: string[]): Promise<Etiqueta[]> {
-    if (ids.length === 0) return [];
-    const rows = await this.db.query.etiquetas.findMany({ where: this.scope(usuarioId) });
-    const set = new Set(ids);
-    return rows.filter((r) => set.has(r.id));
-  }
-
   async nombreEnUso(usuarioId: string, nombre: string, exceptoId?: string): Promise<boolean> {
     const row = await this.db.query.etiquetas.findFirst({
       columns: { id: true },

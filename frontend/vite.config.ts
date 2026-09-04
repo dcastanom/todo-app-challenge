@@ -22,9 +22,11 @@ export default defineConfig({
     css: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text-summary', 'text', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/main.tsx', '**/*.d.ts'],
+      // main/App/pages are composition shells exercised by the Playwright E2E suite.
+      exclude: ['src/main.tsx', 'src/App.tsx', 'src/pages/**', '**/*.d.ts'],
+      thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
     },
   },
 });
