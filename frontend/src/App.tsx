@@ -10,6 +10,9 @@ import { ThemeProvider } from './context/ThemeProvider.js';
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage.js').then((m) => ({ default: m.DashboardPage })),
 );
+const EstadisticasPage = lazy(() =>
+  import('./pages/EstadisticasPage.js').then((m) => ({ default: m.EstadisticasPage })),
+);
 const LoginPage = lazy(() =>
   import('./pages/LoginPage.js').then((m) => ({ default: m.LoginPage })),
 );
@@ -29,6 +32,7 @@ export function App(): JSX.Element {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/estadisticas" element={<EstadisticasPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

@@ -57,6 +57,9 @@ export function DashboardPage(): React.JSX.Element {
           <h1 className={styles.title}>Mis tareas</h1>
           <div className={styles.user}>
             <ThemeToggle />
+            <button type="button" onClick={() => void navigate('/estadisticas')}>
+              Estadísticas
+            </button>
             <button
               type="button"
               onClick={() => setHelpOpen(true)}
