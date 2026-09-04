@@ -80,7 +80,7 @@ npm run e2e:ui --workspace @todo/e2e         # Playwright interactive mode
 
 ## Stack (decided — do not substitute)
 
-**Backend:** Node.js 18+ LTS · Express · TypeScript strict (no `any`) · PostgreSQL 16 · **Drizzle ORM** · Zod · JWT + refresh tokens · Helmet · Pino · Redis (caching) · Socket.io/ws (real-time, optional phases) · Jest + Supertest
+**Backend:** Node.js 18+ LTS · Express · TypeScript strict (no `any`) · PostgreSQL 16 · **Drizzle ORM** · Zod · JWT + refresh tokens · Helmet · Pino · Redis (caching) · Socket.io (real-time, `src/realtime/` — Fase 8 bonus) · Jest + Supertest
 
 **Frontend:** React 18 · TypeScript strict · Context API + `useReducer` · **`react-router-dom` v7** (added Fase 3 — not in original stack doc; needed for `ProtectedRoute`) · React Hook Form + `@hookform/resolvers` + Zod · Axios behind an **Adapter Pattern** (`HttpClient` interface) · CSS Modules · dark mode via CSS variables · `react-beautiful-dnd` · Vitest + React Testing Library · Playwright (E2E)
 
@@ -119,7 +119,7 @@ Migrations live in `backend/drizzle/` (committed). Seed is deterministic (`faker
 
 Database-first, analytics-second. `0` Setup → `1` DB schema + 500+ row seed → `2` 10 analytics queries → `3` Auth → `4` Tarea CRUD → `5` Categorías & Etiquetas → `6` Multidimensional filtering + Redis cache → `7` Full testing + CI → `8` Infra + **bonus features + polish**. Optional after v1.0: `OPT-1` notifications, `OPT-2` audit, `OPT-3` collaboration.
 
-The **bonus features in Phase 8 are mandatory** for this project: drag & drop reorder (persisted), dark mode (localStorage), CSV/JSON export (respects active filters), keyboard shortcuts (Cmd+K/N/D…), batch operations (`PATCH /todos/batch`), basic offline (localStorage draft + sync).
+The **bonus features in Phase 8 are mandatory** for this project: drag & drop reorder (persisted), dark mode (localStorage), CSV/JSON export (respects active filters), keyboard shortcuts (Cmd+K/N/D…), batch operations (`PATCH /todos/batch`), basic offline (localStorage draft + sync). Two more bonus features from the challenge spec's optional list were added after the initial Fase 8 close-out (US-125/US-126, `feature/fase-8-bonus-stats-realtime`): a per-user **stats dashboard** (`GET /api/v1/estadisticas`, `EstadisticasPage` at `/estadisticas`) and **real-time updates via Socket.IO** (`backend/src/realtime/`, `frontend/src/services/socket.service.ts`) — every task/category/tag mutation broadcasts to the owning user's other tabs/devices (private `usuario:<id>` room, JWT-authenticated handshake, the originating tab excluded via `X-Client-Id`).
 
 Work a phase's user stories in order; flip `[ ]`→`[x]` in `PLANIFICACION.md` only when AC + DoD (tests >80% included) are met.
 

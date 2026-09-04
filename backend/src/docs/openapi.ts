@@ -8,7 +8,7 @@ export const openapiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'Todo App API',
-    version: '1.0.0',
+    version: '1.1.0',
     description:
       'API REST de la aplicación de tareas: autenticación JWT, CRUD de tareas, ' +
       'categorías y etiquetas, filtrado multidimensional, operaciones en lote y exportación.',

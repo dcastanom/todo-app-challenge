@@ -267,6 +267,18 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
   - AC: Offline indicator (`OfflineIndicator` + `useOnlineStatus`)
   - DoD: Feature + tests (`useOnlineStatus`, `useFormDraft`, `OfflineIndicator`) ✅
 
+- [x] **US-125: Dashboard de Estadísticas**
+  - AC: `GET /api/v1/estadisticas?dias=` — totales, tasa de completado, desglose por prioridad/categoría y actividad diaria (todo escopado al usuario, cacheado bajo el mismo namespace/versión que `tareas`)
+  - AC: `EstadisticasPage` (`/estadisticas`) — tarjetas de stats, barras por prioridad/categoría, gráfico de actividad; sin dependencia de charts, CSS Modules puro
+  - AC: Se actualiza sola ante cualquier evento realtime de tareas/categorías (US-126)
+  - DoD: Feature + tests (`estadisticas.repository`/`.service` integration, `useEstadisticas`, `StatCard`/`BarraLista`/`ActividadChart`, E2E) ✅
+
+- [x] **US-126: Actualizaciones en Tiempo Real (WebSockets)**
+  - AC: Socket.IO server (`backend/src/realtime/`) montado sobre el mismo `http.Server`; autenticado con el JWT de acceso (mismo `verifyAccessToken` + blacklist que `requireAuth`), cada socket se une a su room privado `usuario:<id>`
+  - AC: Toda mutación de tareas/categorías/etiquetas emite al room del usuario (`tarea:creada/actualizada/eliminada`, `tareas:reordenadas`, `tareas:cambio-masivo`, `categorias:cambiaron`, `etiquetas:cambiaron`) — sincroniza otras pestañas/dispositivos del mismo usuario, nunca entre usuarios distintos
+  - AC: La pestaña que originó el cambio no recibe su propio eco (`X-Client-Id` = `socket.id`, `io.to(room).except(clientId)`)
+  - DoD: Feature + tests (`emitter`, socket-server integration con `socket.io-client` real sobre HTTP real, `useTodos`/`useCrudColeccion`/`useEstadisticas` realtime, E2E multi-pestaña) ✅
+
 ### Polish & Documentation
 
 - [x] **US-101: API Documentation (Swagger)**

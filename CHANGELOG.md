@@ -3,6 +3,14 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/);
 el proyecto sigue [SemVer](https://semver.org/lang/es/).
 
+## [1.1.0] — 2026-09-04
+
+### Añadido
+
+**Features bonus (cierre de Fase 8 — US-125, US-126)**
+- Dashboard de estadísticas por usuario: `GET /api/v1/estadisticas?dias=` (totales, tasa de completado, desglose por prioridad/categoría, actividad diaria) y `EstadisticasPage` (`/estadisticas`) con tarjetas de stats y gráficos sin dependencias externas.
+- Actualizaciones en tiempo real vía Socket.IO (`backend/src/realtime/`): toda mutación de tareas/categorías/etiquetas se transmite al room privado del usuario propietario (`usuario:<id>`), sincronizando sus otras pestañas/dispositivos sin recargar; la pestaña que originó el cambio no recibe su propio eco.
+
 ## [1.0.0] — 2026-09-04
 
 Primera versión lista para producción. Construida en 9 fases (0–8).
