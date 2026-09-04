@@ -31,7 +31,7 @@ test.describe('features bonus', () => {
     await createTask(page, { titulo: 'Lote A' });
     await createTask(page, { titulo: 'Lote B' });
 
-    await page.getByRole('button', { name: 'Seleccionar' }).click();
+    // The per-task selection checkbox is always visible now — no mode toggle.
     await taskItem(page, 'Lote A')
       .getByRole('checkbox', { name: /seleccionar/i })
       .check();
@@ -46,11 +46,28 @@ test.describe('features bonus', () => {
       .click();
 
     await expect(
-      taskItem(page, 'Lote A').getByRole('checkbox', { name: /pendiente/i }),
+      taskItem(page, 'Lote A').getByRole('button', { name: /como pendiente/i }),
+    ).toBeVisible();
+    await expect(
+      taskItem(page, 'Lote B').getByRole('button', { name: /como pendiente/i }),
+    ).toBeVisible();
+  });
+
+  test('el checkbox "Seleccionar todas" marca y desmarca cada tarea visible', async ({ page }) => {
+    await createTask(page, { titulo: 'Todas A' });
+    await createTask(page, { titulo: 'Todas B' });
+
+    await page.getByRole('checkbox', { name: 'Seleccionar todas' }).check();
+    await expect(page.getByText('2 seleccionadas')).toBeVisible();
+    await expect(
+      taskItem(page, 'Todas A').getByRole('checkbox', { name: /seleccionar/i }),
     ).toBeChecked();
     await expect(
-      taskItem(page, 'Lote B').getByRole('checkbox', { name: /pendiente/i }),
+      taskItem(page, 'Todas B').getByRole('checkbox', { name: /seleccionar/i }),
     ).toBeChecked();
+
+    await page.getByRole('checkbox', { name: 'Deseleccionar todas' }).uncheck();
+    await expect(page.getByRole('region', { name: /acciones en lote/i })).toBeHidden();
   });
 
   test('exporta las tareas a CSV', async ({ page }) => {

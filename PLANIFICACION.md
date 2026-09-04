@@ -236,7 +236,7 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
 - [x] **US-095: Drag & Drop Reordenar**
   - AC: ~~React-beautiful-dnd~~ → HTML5 Drag & Drop nativo (sin dependencia; RBD está sin mantenimiento)
   - AC: Persist order a BD → `PATCH /api/v1/tareas/reorder` + columna `posicion` + índice `(usuario_id, posicion)`
-  - AC: Smooth UX → reordenamiento optimista con revert en error, orden "Manual (arrastrar)"
+  - AC: Smooth UX → reordenamiento optimista con revert en error; funciona desde cualquier orden (no solo "Manual (arrastrar)"), y al soltar cambia el orden activo a manual para no perder el cambio en el siguiente refetch
   - DoD: Feature + tests (`moverItem`, `useTodos.mover`, integración endpoint, E2E) ✅
 
 - [x] **US-096: Dark Mode Toggle**
@@ -256,7 +256,7 @@ FASES OPCIONALES (Semana 9+ - SI DA TIEMPO):
   - DoD: Feature + tests (`useKeyboardShortcuts`, modal, E2E) ✅
 
 - [x] **US-099: Batch Operations**
-  - AC: Select múltiples (`useSeleccion`, modo selección en `TodoList`)
+  - AC: Select múltiples (`useSeleccion`) — checkbox de selección por tarea siempre visible (sin modo/botón intermedio) + checkbox "Seleccionar todas" (con estado indeterminado) en la toolbar
   - AC: Batch actions: completar / prioridad / mover categoría / eliminar
   - AC: `PATCH /api/v1/tareas/batch` (discriminated union, ownership-checked)
   - DoD: Feature + tests (`useSeleccion`, `BatchActionBar`, integración, E2E) ✅

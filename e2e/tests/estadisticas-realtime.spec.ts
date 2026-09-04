@@ -7,8 +7,8 @@ test.describe('dashboard de estadísticas', () => {
 
     await createTask(page, { titulo: 'Para estadísticas', prioridad: 'alta' });
     await taskItem(page, 'Para estadísticas')
-      .getByRole('checkbox', { name: /completada/i })
-      .check();
+      .getByRole('button', { name: /como completada/i })
+      .click();
     await createTask(page, { titulo: 'Pendiente', prioridad: 'alta' });
 
     await page.getByRole('button', { name: 'Estadísticas', exact: true }).click();
@@ -54,11 +54,11 @@ test.describe('actualizaciones en tiempo real', () => {
     await expect(taskItem(tabB, 'Compartida')).toBeVisible();
 
     await taskItem(tabA, 'Compartida')
-      .getByRole('checkbox', { name: /completada/i })
-      .check();
+      .getByRole('button', { name: /como completada/i })
+      .click();
 
     await expect(
-      taskItem(tabB, 'Compartida').getByRole('checkbox', { name: /pendiente/i }),
-    ).toBeChecked({ timeout: 5000 });
+      taskItem(tabB, 'Compartida').getByRole('button', { name: /como pendiente/i }),
+    ).toBeVisible({ timeout: 5000 });
   });
 });

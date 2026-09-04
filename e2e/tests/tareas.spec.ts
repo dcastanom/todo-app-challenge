@@ -21,8 +21,8 @@ test.describe('CRUD de tareas', () => {
     const item = taskItem(page, 'Regar plantas');
 
     // completar
-    await item.getByRole('checkbox').check();
-    await expect(item.getByRole('checkbox')).toBeChecked();
+    await item.getByRole('button', { name: /como completada/i }).click();
+    await expect(item.getByRole('button', { name: /como pendiente/i })).toBeVisible();
 
     // editar
     await item.getByRole('button', { name: /editar/i }).click();
