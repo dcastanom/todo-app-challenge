@@ -38,6 +38,8 @@ export class AuthApi {
     const refreshToken = tokenStorage.getRefresh();
     try {
       await this.http.post('/auth/logout', { refreshToken });
+    } catch {
+      // Logging out locally always succeeds, even if the server call fails.
     } finally {
       tokenStorage.clear();
     }

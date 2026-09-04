@@ -19,7 +19,13 @@ export const registerSchema = z.object({
     .max(100)
     .regex(/^[a-zA-Z0-9_.-]+$/, 'Sólo letras, números y . _ -'),
   password: passwordSchema,
-  nombreCompleto: z.string().trim().min(1).max(255).optional(),
+  // Optional — an empty field (from a form) counts as "not provided".
+  nombreCompleto: z
+    .string()
+    .trim()
+    .max(255)
+    .optional()
+    .transform((v) => (v ? v : undefined)),
 });
 
 export const loginSchema = z.object({
