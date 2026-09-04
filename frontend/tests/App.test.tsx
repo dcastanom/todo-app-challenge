@@ -13,6 +13,9 @@ vi.mock('../src/services/auth.service.js', () => ({
 describe('<App />', () => {
   it('redirects an anonymous visitor to the login page', async () => {
     render(<App />);
-    expect(await screen.findByRole('heading', { name: /iniciar sesión/i })).toBeInTheDocument();
+    // Pages are lazy-loaded, so allow a little longer for the chunk + auth check.
+    expect(
+      await screen.findByRole('heading', { name: /iniciar sesión/i }, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 });

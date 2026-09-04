@@ -1,10 +1,19 @@
 :root {
-  /* Light theme tokens — dark mode overrides these in Phase 8. */
+  /* Light theme (default). Dark mode overrides these under
+     [data-theme='dark'] and prefers-color-scheme below. */
   --color-bg: #f7f8fa;
   --color-surface: #ffffff;
+  --color-surface-alt: #eef1f5;
   --color-text: #1a1a2e;
-  --color-primary: #3498db;
+  --color-text-muted: #5b6472;
+  --color-primary: #2f7fd1;
+  --color-primary-contrast: #ffffff;
   --color-border: #e1e4e8;
+  --color-danger: #c0392b;
+  --color-success: #1e8e4e;
+  --color-overlay: rgba(20, 24, 33, 0.45);
+  --shadow-sm: 0 1px 2px rgba(20, 24, 33, 0.08);
+  --shadow-md: 0 6px 24px rgba(20, 24, 33, 0.16);
 
   color-scheme: light;
   font-family:
@@ -16,6 +25,45 @@
   line-height: 1.5;
 }
 
+:root[data-theme='dark'] {
+  --color-bg: #14181f;
+  --color-surface: #1e242e;
+  --color-surface-alt: #262d39;
+  --color-text: #e7ebf0;
+  --color-text-muted: #9aa4b2;
+  --color-primary: #4f9fe8;
+  --color-primary-contrast: #0c1017;
+  --color-border: #333c4a;
+  --color-danger: #e06b5e;
+  --color-success: #4cc27e;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}
+
+/* Follow the OS when the user has not made an explicit choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #14181f;
+    --color-surface: #1e242e;
+    --color-surface-alt: #262d39;
+    --color-text: #e7ebf0;
+    --color-text-muted: #9aa4b2;
+    --color-primary: #4f9fe8;
+    --color-primary-contrast: #0c1017;
+    --color-border: #333c4a;
+    --color-danger: #e06b5e;
+    --color-success: #4cc27e;
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.5);
+
+    color-scheme: dark;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -25,4 +73,7 @@ body {
   min-height: 100vh;
   background: var(--color-bg);
   color: var(--color-text);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
