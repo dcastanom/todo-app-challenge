@@ -92,6 +92,47 @@ describe('PATCH /api/v1/tareas/batch', () => {
     expect((list.body as PaginatedResponse<TareaDTO>).data).toHaveLength(2);
   });
 
+  it('sets a priority on many tasks', async () => {
+    const token = await makeUser();
+    const a = await createTarea(token);
+    const b = await createTarea(token);
+
+    const res = await request(app)
+      .patch('/api/v1/tareas/batch')
+      .set(...bearer(token))
+      .send({ ids: [a.id, b.id], accion: { tipo: 'prioridad', prioridad: 'urgente' } })
+      .expect(200);
+    expect((res.body as ApiResponse<BatchResultado>).data.afectadas).toBe(2);
+
+    const list = await request(app)
+      .get('/api/v1/tareas?prioridad=urgente')
+      .set(...bearer(token))
+      .expect(200);
+    expect((list.body as PaginatedResponse<TareaDTO>).data).toHaveLength(2);
+  });
+
+  it('moves many tasks to one of the caller’s categories', async () => {
+    const token = await makeUser();
+    const a = await createTarea(token);
+    const cat = await request(app)
+      .post('/api/v1/categorias')
+      .set(...bearer(token))
+      .send({ nombre: 'Destino' })
+      .expect(201);
+
+    await request(app)
+      .patch('/api/v1/tareas/batch')
+      .set(...bearer(token))
+      .send({ ids: [a.id], accion: { tipo: 'categoria', categoriaId: cat.body.data.id as string } })
+      .expect(200);
+
+    const got = await request(app)
+      .get(`/api/v1/tareas/${a.id}`)
+      .set(...bearer(token))
+      .expect(200);
+    expect((got.body as ApiResponse<TareaDTO>).data.categoria?.nombre).toBe('Destino');
+  });
+
   it('soft-deletes many tasks', async () => {
     const token = await makeUser();
     const a = await createTarea(token);
