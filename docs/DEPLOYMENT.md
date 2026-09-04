@@ -7,7 +7,7 @@ Dos imágenes, ambas construidas desde la raíz del repo:
 | Imagen | Dockerfile | Contenido |
 |---|---|---|
 | `todo-backend` | `backend/Dockerfile` | API Express compilada + deps de producción; `tini` como PID 1; aplica migraciones y arranca el server. |
-| `todo-frontend` | `frontend/Dockerfile` | Bundle de Vite servido por nginx; `nginx.conf` proxya `/api` al backend. |
+| `todo-frontend` | `frontend/Dockerfile` | Bundle de Vite servido por nginx; `nginx.conf` proxya `/api`, `/health` y `/socket.io` (con upgrade a WebSocket) al backend. |
 
 ```bash
 docker build -f backend/Dockerfile  -t todo-backend .
@@ -32,6 +32,11 @@ docker compose -f docker-compose.prod.yml up --build -d
   migraciones se aplican solas en cada despliegue.
 - El seed **no** se ejecuta en producción (usa `@faker-js/faker`, que es devDependency).
 - Volúmenes con estado: `postgres_data`, `redis_data`.
+- `docker-compose.prod.yml` fija `name: todo-prod` — proyecto de Compose propio, aislado del
+  `docker-compose.yml` de desarrollo (que define servicios `postgres`/`redis` con el mismo
+  nombre). Sin esto, un `down` de un archivo puede matchear y borrar los contenedores del otro
+  por (proyecto, servicio), sin importar cuál los creó. Para correr ambos stacks a la vez,
+  pasá `BACKEND_PORT`/`CORS_ORIGIN` distintos al levantar el de producción (ver `README.md`).
 
 ### Variables de entorno (backend)
 

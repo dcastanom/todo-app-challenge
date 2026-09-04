@@ -47,11 +47,18 @@ npm run db:reset   --workspace backend              # vacía todas las tablas
 
 ```bash
 docker compose -f docker-compose.prod.yml up --build
-#   frontend :8080   backend :4000   (migraciones se aplican al arrancar el backend)
+#   frontend :8080   backend :4000 (+ /socket.io)   (migraciones se aplican al arrancar el backend)
+#   proyecto de Compose propio ("todo-prod", ver name: en el archivo) — convive con
+#   npm run db:up / dev:backend / dev:frontend sin pisarlos
 
-# con observabilidad:
+# a la vez que dev:backend/dev:frontend (que ya usan 4000/5173):
+BACKEND_PORT=4001 CORS_ORIGIN=http://localhost:8080 \
+  docker compose -f docker-compose.prod.yml up --build -d
+
+# con observabilidad (métricas + trazas + logs):
 docker compose -f docker-compose.prod.yml -f docker-compose.observability.yml up --build
-#   Grafana :3001 (admin/admin)   Prometheus :9090   Jaeger :16686
+#   Grafana :3001 (admin/admin, dashboard "Todo Backend" + panel de logs)
+#   Prometheus :9090   Jaeger :16686   Loki :3101 (vía Grafana, no directo)
 ```
 
 ## 2. Tests por capa
