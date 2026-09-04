@@ -1,0 +1,18 @@
+# AWS overlay — swaps the locally-built images for the ones CI already
+# publishes to GHCR (.github/workflows/ci.yml, job "docker"), so the EC2
+# instance never builds anything, just pulls and runs:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.aws.yml pull
+#   docker compose -f docker-compose.prod.yml -f docker-compose.aws.yml up -d
+#
+# GHCR_OWNER defaults to the repo owner; IMAGE_TAG defaults to "latest" —
+# pin it to a short commit SHA for a reproducible deploy or an instant
+# rollback (see docs/DEPLOYMENT-AWS.md).
+services:
+  backend:
+    build: !reset null
+    image: ghcr.io/${GHCR_OWNER:-dcastanom}/todo-app-challenge-backend:${IMAGE_TAG:-latest}
+
+  frontend:
+    build: !reset null
+    image: ghcr.io/${GHCR_OWNER:-dcastanom}/todo-app-challenge-frontend:${IMAGE_TAG:-latest}

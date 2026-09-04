@@ -108,7 +108,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.observability.yml up
 # Jaeger  → http://localhost:16686   Loki (vía Grafana, no directo) → :3101
 ```
 
-Guía detallada: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+Guía detallada: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) · paso a paso para AWS (EC2, desde cero): [`docs/DEPLOYMENT-AWS.md`](docs/DEPLOYMENT-AWS.md).
 
 ## Observabilidad
 
