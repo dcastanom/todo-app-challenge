@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, type ReactNode } from 'rea
 import type { LoginInput, RegisterInput, UsuarioPublico } from '@todo/shared';
 import { authApi } from '../services/auth.service.js';
 import { HttpError, SESSION_EXPIRED_EVENT } from '../services/http.js';
+import { connect, disconnect } from '../services/socket.service.js';
 import { tokenStorage } from '../services/token-storage.js';
 import { AuthContext, type AuthContextValue, type AuthStatus } from './auth-context.js';
 
@@ -59,6 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       cancelled = true;
     };
   }, []);
+
+  // Keeps the realtime socket's lifecycle tied to the session: connect once
+  // authenticated (with the current access token), disconnect otherwise.
+  useEffect(() => {
+    if (state.status !== 'authenticated') return;
+    const token = tokenStorage.getAccess();
+    if (token) connect(token);
+    return () => disconnect();
+  }, [state.status]);
 
   useEffect(() => {
     const onExpired = (): void => {

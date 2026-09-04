@@ -8,10 +8,15 @@ import type {
   TareaDTO,
   TareaFiltros,
 } from '@todo/shared';
-import { PAGINACION } from '@todo/shared';
+import { PAGINACION, REALTIME_EVENTS } from '@todo/shared';
 import { moverItem } from '../lib/reordenar.js';
 import { HttpError } from '../services/http.js';
+import { on as onRealtime } from '../services/socket.service.js';
 import { tareasApi } from '../services/tareas.service.js';
+
+/** Debounce window for realtime-triggered reloads — several bonus actions
+ *  (batch, reorder) fire multiple events in a row for one user action. */
+const REALTIME_RELOAD_DEBOUNCE_MS = 200;
 
 interface State {
   tareas: TareaDTO[];
@@ -130,6 +135,29 @@ export function useTodos(filtros: TareaFiltros = {}): UseTodos {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // Cross-tab / cross-device sync: another session of this same user
+  // changed a task, so refetch the current page. Own-tab changes are
+  // excluded server-side (see `X-Client-Id` in `services/http.ts`), so this
+  // never fights the optimistic updates below.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleReload = (): void => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void load(), REALTIME_RELOAD_DEBOUNCE_MS);
+    };
+    const unsubscribers = [
+      onRealtime(REALTIME_EVENTS.TAREA_CREADA, scheduleReload),
+      onRealtime(REALTIME_EVENTS.TAREA_ACTUALIZADA, scheduleReload),
+      onRealtime(REALTIME_EVENTS.TAREA_ELIMINADA, scheduleReload),
+      onRealtime(REALTIME_EVENTS.TAREAS_REORDENADAS, scheduleReload),
+      onRealtime(REALTIME_EVENTS.TAREAS_CAMBIO_MASIVO, scheduleReload),
+    ];
+    return () => {
+      clearTimeout(timer);
+      unsubscribers.forEach((off) => off());
+    };
   }, [load]);
 
   const crear = useCallback(

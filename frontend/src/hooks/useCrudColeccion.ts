@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useReducer } from 'react';
+import type { RealtimeEvent } from '@todo/shared';
 import { HttpError } from '../services/http.js';
+import { on as onRealtime } from '../services/socket.service.js';
+
+/** Debounce window for realtime-triggered reloads. */
+const REALTIME_RELOAD_DEBOUNCE_MS = 200;
 
 export interface CrudApi<T extends { id: string }, C, U> {
   list: () => Promise<T[]>;
@@ -59,6 +64,9 @@ export interface CrudColeccion<T, C, U> {
 export function useCrudColeccion<T extends { id: string }, C, U>(
   api: CrudApi<T, C, U>,
   onChange?: () => void,
+  /** Realtime event that means "another tab changed this collection" —
+   *  e.g. `categorias:cambiaron`. Omit for collections with no realtime feed. */
+  realtimeEvent?: RealtimeEvent,
 ): CrudColeccion<T, C, U> {
   const [state, dispatch] = useReducer(reducer<T>, { items: [], status: 'loading', error: null });
 
@@ -74,6 +82,19 @@ export function useCrudColeccion<T extends { id: string }, C, U>(
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!realtimeEvent) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = onRealtime(realtimeEvent, () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void refresh(), REALTIME_RELOAD_DEBOUNCE_MS);
+    });
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [realtimeEvent, refresh]);
 
   const crear = useCallback(
     async (input: C) => {
