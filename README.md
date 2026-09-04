@@ -68,7 +68,9 @@ Cuenta demo tras el seed: `demo@todo.app` / `Password123!`
 | `db:studio` | Drizzle Studio |
 
 Un solo test backend: `npm test --workspace backend -- health`.
-Tests de integración (necesitan Postgres): `npm run test:integration --workspace backend`.
+Integración (necesita Postgres + Redis): `npm run test:integration --workspace backend`.
+Cobertura ≥80% (unit + integración + frontend): `npm run test:coverage`.
+E2E Playwright (arranca sus propios servidores): `npm run test:e2e` — primero `npm run install-browsers --workspace @todo/e2e`.
 
 ## Estado
 
@@ -79,6 +81,7 @@ Tests de integración (necesitan Postgres): `npm run test:integration --workspac
 - [x] **Fase 4** — CRUD de tareas: `GET/POST/PUT/DELETE /api/v1/tareas` + `PATCH /:id/completar`, con paginación y ordenamiento. Frontend: `useTodos` (optimista), `TodoList`/`TodoItem`/`TodoForm`/`Pagination`, dashboard funcional.
 - [x] **Fase 5** — Categorías & Etiquetas: CRUD (`/api/v1/{categorias,etiquetas}`), relación M:M con tareas (`etiquetaIds`, endpoints granulares), `TareaDTO` con categoría y etiquetas embebidas. Frontend: `CategoryManager`/`TagManager` en la barra lateral, selector de categoría y etiquetas en el formulario.
 - [x] **Fase 6** — Filtrado multidimensional: 8 filtros + búsqueda de texto (índices `pg_trgm`) en `GET /api/v1/tareas`, con caché Redis por usuario+query (invalidación por versión). Frontend: `SearchBar` (debounce) + `FilterPanel` + `useFilters`.
-- [ ] Fases 7-8 — ver `PLANIFICACION.md`.
+- [x] **Fase 7** — Testing completo: **186 tests** (96 backend + 80 frontend + 10 E2E Playwright), gate de cobertura ≥80% en CI. Pipeline CI con jobs `verify` / `integration` / `e2e`.
+- [ ] Fase 8 — ver `PLANIFICACION.md`.
 
 Documentación de arquitectura y plan: `CLAUDE.md`, `ARQUITECTURA.md`, `PLANIFICACION.md`, `PLAN_COMMITS.md`.
