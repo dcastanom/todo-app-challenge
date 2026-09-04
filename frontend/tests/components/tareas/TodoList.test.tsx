@@ -75,7 +75,7 @@ describe('<TodoList />', () => {
     expect(todos.setSort).toHaveBeenCalledWith('prioridad', 'desc');
   });
 
-  it('persists a drag reorder when sorting manually', () => {
+  it('persists a drag reorder when already sorted manually, without switching sort again', () => {
     const todos = makeTodos({
       orden: 'posicion',
       direccion: 'asc',
@@ -90,6 +90,44 @@ describe('<TodoList />', () => {
     fireEvent.dragEnd(first!);
 
     expect(todos.mover).toHaveBeenCalledWith(0, 1);
+    expect(todos.setSort).not.toHaveBeenCalled();
+  });
+
+  it('drag & drop also works from a non-manual sort, switching into manual order', () => {
+    const todos = makeTodos({
+      orden: 'created_at',
+      direccion: 'desc',
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    const [first, second] = screen.getAllByRole('listitem');
+    // draggable — not gated behind the "Manual (arrastrar)" sort option.
+    expect(first).toHaveAttribute('draggable', 'true');
+
+    fireEvent.dragStart(first!);
+    fireEvent.dragEnter(second!);
+    fireEvent.dragEnd(first!);
+
+    expect(todos.mover).toHaveBeenCalledWith(0, 1);
+    expect(todos.setSort).toHaveBeenCalledWith('posicion', 'asc');
+  });
+
+  it('does not persist a drag that ends on its own starting position', () => {
+    const todos = makeTodos({
+      tareas: [makeTarea({ id: 't1', titulo: 'Uno' }), makeTarea({ id: 't2', titulo: 'Dos' })],
+      total: 2,
+    });
+    renderList(todos);
+
+    const [first] = screen.getAllByRole('listitem');
+    fireEvent.dragStart(first!);
+    fireEvent.dragEnter(first!);
+    fireEvent.dragEnd(first!);
+
+    expect(todos.mover).not.toHaveBeenCalled();
+    expect(todos.setSort).not.toHaveBeenCalled();
   });
 
   it('reveals the batch bar once tasks are selected', async () => {

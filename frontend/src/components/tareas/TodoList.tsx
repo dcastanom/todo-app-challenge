@@ -39,7 +39,7 @@ export interface TodoListProps {
   etiquetas: EtiquetaDTO[];
   /** Share selection state with the parent; omitted → the list owns it. */
   seleccion?: UseSeleccion;
-  /** Bumped by the parent (⌘N) to pop the new-task form open. */
+  /** Bumped by the parent (N) to pop the new-task form open. */
   nuevaSignal?: number;
   searchInputRef?: React.RefObject<HTMLInputElement> | undefined;
 }
@@ -81,6 +81,11 @@ export function TodoList({
   const commitDrag = (): void => {
     if (dragIndex !== null && overIndex !== null && dragIndex !== overIndex) {
       void todos.mover(dragIndex, overIndex);
+      // Dragging from any other sort ("Más recientes", "Prioridad"…) commits
+      // the new order and switches the view into manual mode, same as most
+      // kanban-style UIs — otherwise the next reload would silently discard
+      // the drag by re-sorting on the old criteria.
+      if (!manual) todos.setSort('posicion', 'asc');
     }
     setDragIndex(null);
     setOverIndex(null);
@@ -189,21 +194,20 @@ export function TodoList({
                   onToggle: seleccion.toggle,
                 },
               })}
-              {...(manual &&
-                !seleccionando && {
-                  drag: {
-                    onDragStart: () => setDragIndex(index),
-                    onDragEnter: () => setOverIndex(index),
-                    onDragEnd: commitDrag,
-                    dragging: dragIndex === index,
-                  },
-                })}
+              {...(!seleccionando && {
+                drag: {
+                  onDragStart: () => setDragIndex(index),
+                  onDragEnter: () => setOverIndex(index),
+                  onDragEnd: commitDrag,
+                  dragging: dragIndex === index,
+                },
+              })}
             />
           ))}
         </ul>
       )}
 
-      {manual && !seleccionando && todos.tareas.length > 1 && (
+      {!seleccionando && todos.tareas.length > 1 && (
         <p className={styles.hint}>Arrastra las tareas para cambiar su orden.</p>
       )}
 
