@@ -15,6 +15,13 @@
       "when": 1788478107513,
       "tag": "0001_search_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788482477211,
+      "tag": "0002_manual_order_index",
+      "breakpoints": true
     }
   ]
 }

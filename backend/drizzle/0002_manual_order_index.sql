@@ -1,0 +1,1 @@
+CREATE INDEX "idx_tareas_usuario_posicion" ON "tareas" USING btree ("usuario_id","posicion");
