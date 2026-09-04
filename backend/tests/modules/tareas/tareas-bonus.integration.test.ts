@@ -196,6 +196,8 @@ describe('GET /api/v1/tareas/export', () => {
 
     expect(res.headers['content-type']).toMatch(/text\/csv/);
     expect(res.headers['content-disposition']).toMatch(/attachment; filename="tareas-/);
+    // Browsers can only read Content-Disposition cross-origin when it is exposed.
+    expect(res.headers['access-control-expose-headers']).toMatch(/content-disposition/i);
     const lines = res.text.trim().split('\r\n');
     expect(lines).toHaveLength(2); // header + 1 match
     expect(lines[1]).toContain('Urgente');

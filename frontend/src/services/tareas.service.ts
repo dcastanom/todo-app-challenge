@@ -70,7 +70,8 @@ export class TareasApi {
       typeof res.headers?.['content-disposition'] === 'string'
         ? res.headers['content-disposition']
         : '';
-    const filename = FILENAME_RE.exec(disposition)?.[1] ?? `tareas.${formato}`;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = FILENAME_RE.exec(disposition)?.[1] ?? `tareas-${stamp}.${formato}`;
     return { blob: res.data as Blob, filename };
   }
 }
